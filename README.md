@@ -2,7 +2,7 @@
 
 [![Deno](https://img.shields.io/badge/deno-2.x-blue?logo=deno)](https://deno.land)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.0.0-orange)](https://jsr.io/@mrsimb/steam-blank-icon)
+[![Version](https://img.shields.io/badge/version-3.1.0-orange)](https://jsr.io/@mrsimb/steam-blank-icon)
 [![Code Quality](https://img.shields.io/badge/lint-passing-brightgreen)](CODE_REVIEW.md)
 [![Accessibility](https://img.shields.io/badge/WCAG-2.1_AA-success)](https://www.w3.org/WAI/WCAG21/quickref/)
 
@@ -42,6 +42,7 @@ The most advanced Steam icon fixer with **enterprise-grade multi-library support
 
 ### ⚡ Core Functionality
 - **Batch Processing** - Fix multiple shortcuts simultaneously
+- **Refresh All Shortcuts** - Delete and recreate ALL Steam shortcuts with fresh icons
 - **Smart Caching** - Skips already-fixed icons to save time
 - **Network Timeouts** - 30-second timeout with retry logic
 - **Error Recovery** - Detailed error messages with actionable solutions
@@ -79,7 +80,7 @@ deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility
 
 1. Download `steam-icon-fixer.bat` from the repository
 2. Double-click to launch the interactive menu
-3. Choose from 8 options including accessibility mode
+3. Choose from 8 options including refresh all shortcuts and accessibility mode
 
 ### Command Line Mode
 
@@ -97,6 +98,9 @@ deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon "Desktop/Hades.url" "
 
 # Specify custom Steam installation path
 deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --steampath="D:/Programs/Steam"
+
+# Refresh ALL Steam shortcuts on desktop (delete and recreate)
+deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --refresh-all
 
 # Enable accessibility presets
 deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=vision .
@@ -137,6 +141,7 @@ You can run without permission flags to be prompted for each permission individu
 ║    Fix Icons on Desktop                       ║
 ║    Browse for Directory...                    ║
 ║    Select Specific Files...                   ║
+║    Refresh ALL Desktop Shortcuts [NEW!]       ║
 ║    Settings & Options [A11Y]                  ║
 ║    Exit                                       ║
 ╚═══════════════════════════════════════════════╝
@@ -179,6 +184,27 @@ You can run without permission flags to be prompted for each permission individu
 - **Multi-Select** - Checkbox mode for batch operations
 - **Live Stats** - Shows selected count and total items
 - **Confirmation Dialogs** - Prevents accidental actions
+
+### 🔄 Refresh ALL Desktop Shortcuts
+
+This powerful feature completely refreshes your Steam game collection on the desktop:
+
+**What it does:**
+- Scans ALL Steam libraries to find every installed game
+- Deletes existing Steam shortcuts from desktop
+- Creates fresh shortcuts for ALL games
+- Downloads missing icons automatically
+
+**Perfect for when:**
+- Icons are corrupted or blank
+- You've installed/uninstalled many games
+- You want all games on desktop at once
+- Steam shortcuts aren't working properly
+
+**How to use:**
+1. **From Menu**: Select "Refresh ALL Desktop Shortcuts"
+2. **From Batch**: Choose option 4
+3. **Command Line**: `deno run -N -R -W --allow-run mod.ts --refresh-all`
 
 ## 🛠️ How It Works
 
@@ -313,7 +339,21 @@ deno fmt
 
 ## 📝 Changelog
 
-### v3.0.0 (Latest) - Accessibility & Multi-Library Update
+### v3.1.0 (Latest) - Refresh All Shortcuts & Pure CLI
+- 🔄 **Refresh ALL Desktop Shortcuts**
+  - Delete and recreate all Steam shortcuts at once
+  - Scan all libraries for installed games
+  - Automatic icon downloading
+  - Progress tracking and confirmation dialogs
+- 🎯 **Pure CLI Application**
+  - Removed experimental web GUI
+  - Focused on terminal experience
+  - Streamlined codebase
+- 🛠️ **New Modules**
+  - `shortcut_manager.ts` for shortcut operations
+  - Enhanced menu with 8 options
+
+### v3.0.0 - Accessibility & Multi-Library Update
 - ♿ **Full Accessibility Support**
   - Screen reader compatibility
   - 4 accessibility presets (Vision, Motion, Cognitive, Full)

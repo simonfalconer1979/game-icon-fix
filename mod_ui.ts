@@ -9,6 +9,7 @@ import { showMainMenu, showSettingsMenu } from "./menu.ts";
 import { PathBrowser } from "./browser.ts";
 import { IconProcessor } from "./processor.ts";
 import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
+import { ShortcutManager } from "./shortcut_manager.ts";
 import {
   centerText,
   clearScreen,
@@ -298,6 +299,12 @@ async function main(): Promise<void> {
             const processor = new IconProcessor(steamInfo, iconResolver);
             await processor.processFiles(selected);
           }
+          break;
+        }
+
+        case "refresh-all": {
+          const manager = new ShortcutManager(steamInfo);
+          await manager.refreshAllShortcuts();
           break;
         }
 

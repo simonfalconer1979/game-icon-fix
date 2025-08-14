@@ -6,7 +6,8 @@
       "Bash(deno:*)",
       "Bash(copy steam-icon-fixer-advanced.bat steam-icon-fixer-advanced-fixed.bat)",
       "Bash(del:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

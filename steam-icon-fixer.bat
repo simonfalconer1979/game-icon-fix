@@ -5,7 +5,7 @@ title Steam Icon Fixer - Launcher
 :: Steam Icon Fixer - Enhanced Launcher
 :: Provides multiple modes for running the Steam Icon Fixer
 :: Author: @mrsimb
-:: Version: 3.0.0
+:: Version: 3.1.0
 
 :: Check if Deno is installed
 where deno >nul 2>nul
@@ -35,7 +35,7 @@ color 0B
 echo.
 echo   ╔═══════════════════════════════════════════════════════════════╗
 echo   ║                                                               ║
-echo   ║                    🎮 STEAM ICON FIXER 3.0                    ║
+echo   ║                    🎮 STEAM ICON FIXER 3.1                    ║
 echo   ║                 Enhanced Multi-Library Support                ║
 echo   ║                                                               ║
 echo   ╚═══════════════════════════════════════════════════════════════╝
@@ -51,11 +51,11 @@ echo.
 echo   [3] 🖥️  Fix Desktop Icons
 echo       Process all Steam shortcuts on your Desktop
 echo.
-echo   [4] 🔧 Custom Steam Path
-echo       Specify a custom Steam installation path
+echo   [4] 🔄 Refresh ALL Desktop Shortcuts
+echo       Delete and recreate all Steam shortcuts
 echo.
-echo   [5] 🌐 Web GUI Mode (Experimental)
-echo       Launch web-based interface in browser
+echo   [5] 🔧 Custom Steam Path
+echo       Specify a custom Steam installation path
 echo.
 echo   [6] ♿ Accessibility Mode
 echo       Enable screen reader friendly mode
@@ -72,8 +72,8 @@ set /p choice="   Enter your choice (1-8): "
 if "%choice%"=="1" goto :ui_mode
 if "%choice%"=="2" goto :current_dir
 if "%choice%"=="3" goto :desktop
-if "%choice%"=="4" goto :custom_path
-if "%choice%"=="5" goto :gui_mode
+if "%choice%"=="4" goto :refresh_all
+if "%choice%"=="5" goto :custom_path
 if "%choice%"=="6" goto :accessibility_mode
 if "%choice%"=="7" goto :show_help
 if "%choice%"=="8" goto :exit
@@ -146,6 +146,36 @@ if %errorlevel% neq 0 (
     echo.
     echo   Error: Failed to process desktop shortcuts.
     echo   Make sure there are Steam shortcuts on your desktop.
+    echo.
+)
+pause
+goto :show_menu
+
+:refresh_all
+cls
+color 0E
+echo.
+echo   ╔═══════════════════════════════════════════════════════════════╗
+echo   ║           Refresh ALL Desktop Shortcuts                       ║
+echo   ╚═══════════════════════════════════════════════════════════════╝
+echo.
+echo   ⚠️  WARNING: This will:
+echo   • Delete ALL existing Steam shortcuts on your desktop
+echo   • Recreate shortcuts for ALL installed Steam games
+echo   • Download missing icons automatically
+echo.
+echo   This is useful when:
+echo   • Icons are corrupted or missing
+echo   • You want a fresh set of all game shortcuts
+echo   • Steam shortcuts are not working properly
+echo.
+echo   Starting refresh process...
+echo.
+deno run -N -R -W --allow-run mod.ts --refresh-all
+if %errorlevel% neq 0 (
+    color 0C
+    echo.
+    echo   Error: Failed to refresh shortcuts.
     echo.
 )
 pause
@@ -231,27 +261,6 @@ if %errorlevel% neq 0 (
     echo   Error occurred while running in accessibility mode.
     echo.
 )
-pause
-goto :show_menu
-
-:gui_mode
-cls
-color 0F
-echo.
-echo   ╔═══════════════════════════════════════════════════════════════╗
-echo   ║                    Web GUI Mode                               ║
-echo   ╚═══════════════════════════════════════════════════════════════╝
-echo.
-echo   ⚠️  Note: Web GUI is experimental and uses older detection logic
-echo.
-echo   Launching web interface...
-echo   The browser should open automatically.
-echo   If not, please visit: http://localhost:8080
-echo.
-echo   Press Ctrl+C to stop the server
-echo.
-start http://localhost:8080
-deno run -N -R -W --allow-run gui.ts
 pause
 goto :show_menu
 

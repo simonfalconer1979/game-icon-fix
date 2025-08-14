@@ -7,13 +7,17 @@ import { parseArgs } from "jsr:@std/cli@1.0.17/parse-args";
 import { extname, join, resolve } from "jsr:@std/path@1.0.9";
 import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
 import { SettingsManager } from "./settings.ts";
+import { ShortcutManager } from "./shortcut_manager.ts";
 
 /**
  * Main entry point for CLI mode
  * Launches UI mode if no arguments provided
  */
 export async function main(): Promise<void> {
-  const flags = parseArgs(Deno.args, { string: ["steampath", "accessibility"] });
+  const flags = parseArgs(Deno.args, { 
+    string: ["steampath", "accessibility"],
+    boolean: ["refresh-all"]
+  });
   
   // Handle accessibility flag
   if (flags.accessibility) {
@@ -44,6 +48,22 @@ export async function main(): Promise<void> {
         console.log(`Warning: Unknown accessibility preset '${preset}'`);
       }
     }
+  }
+
+  // Handle refresh-all flag
+  if (flags["refresh-all"]) {
+    const steamInfo = await getSteamInfo(flags.steampath)
+      .catch((error) => {
+        console.log(error.message);
+        console.log(
+          `❔ Do you have Steam installed? Try specifying the Steam path manually by adding --steampath="path/to/your/steam"`,
+        );
+        Deno.exit(1);
+      });
+    
+    const manager = new ShortcutManager(steamInfo);
+    await manager.refreshAllShortcuts();
+    return;
   }
 
   // If no arguments provided, launch UI mode

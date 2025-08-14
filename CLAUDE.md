@@ -44,7 +44,6 @@ deno check mod.ts mod_ui.ts
 - **browser.ts**: Interactive file/directory browser with multi-select
 - **processor.ts**: Icon downloading and processing logic
 - **steam_detector.ts**: Enhanced Steam detection with VDF parsing and multi-library support
-- **gui.ts**: GUI launcher using webview (experimental)
 
 ### Key Design Patterns
 1. **Dual Mode Operation**: Automatically switches between CLI and UI modes based on arguments

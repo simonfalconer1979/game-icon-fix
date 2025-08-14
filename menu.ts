@@ -223,6 +223,10 @@ export async function showMainMenu(): Promise<string | null> {
       label: "Select Specific Files...",
     },
     {
+      id: "refresh-all",
+      label: "Refresh ALL Desktop Shortcuts",
+    },
+    {
       id: "settings",
       label: "Settings & Options",
     },
