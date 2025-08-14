@@ -1,12 +1,58 @@
+/**
+ * Command-line interface module for Steam Icon Fixer
+ * Handles CLI arguments and non-interactive processing
+ */
+
 import { parseArgs } from "jsr:@std/cli@1.0.17/parse-args";
-import { join, resolve, extname } from "jsr:@std/path@1.0.9";
+import { extname, join, resolve } from "jsr:@std/path@1.0.9";
+import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
+import { SettingsManager } from "./settings.ts";
 
-const DEFAULT_STEAM_PATH = "c:/program files (x86)/steam";
+/**
+ * Main entry point for CLI mode
+ * Launches UI mode if no arguments provided
+ */
+export async function main(): Promise<void> {
+  const flags = parseArgs(Deno.args, { string: ["steampath", "accessibility"] });
+  
+  // Handle accessibility flag
+  if (flags.accessibility) {
+    const settings = SettingsManager.getInstance();
+    
+    if (typeof flags.accessibility === "string" && flags.accessibility === "") {
+      // Enable basic accessibility
+      await settings.updateSettings({
+        accessibility: {
+          noAnimations: true,
+          verboseMode: true,
+          simpleAscii: true,
+          noBlinking: true,
+          highContrast: false,
+          largeText: false,
+          soundFeedback: false,
+          reducedColors: false,
+        }
+      });
+      console.log("♿ Accessibility mode enabled");
+    } else {
+      // Use preset
+      const preset = flags.accessibility as "full" | "vision" | "motion" | "cognitive";
+      if (["full", "vision", "motion", "cognitive"].includes(preset)) {
+        await settings.enableAccessibilityPreset(preset);
+        console.log(`♿ Accessibility preset '${preset}' enabled`);
+      } else {
+        console.log(`Warning: Unknown accessibility preset '${preset}'`);
+      }
+    }
+  }
 
-async function main() {
-  const flags = parseArgs(Deno.args, { string: ["steampath"] });
+  // If no arguments provided, launch UI mode
+  if (Deno.args.length === 0) {
+    await import("./mod_ui.ts");
+    return;
+  }
 
-  const steamIconsPath = await getSteamIconsPath(flags.steampath)
+  const steamInfo = await getSteamInfo(flags.steampath)
     .catch((error) => {
       console.log(error.message);
       console.log(
@@ -15,75 +61,105 @@ async function main() {
       Deno.exit(1);
     });
 
+  // Get installed games for better icon resolution
+  console.log("🎮 Loading installed games...");
+  const installedGames = await SteamDetector.getInstalledGames(steamInfo);
+  const settingsInstance = SettingsManager.getInstance();
+  const gameCountText = settingsInstance.getSettings().accessibility.verboseMode
+    ? `[INFO] Total installed games found: ${installedGames.size}`
+    : `📊 Found ${installedGames.size} installed games`;
+  console.log(gameCountText + "\n");
+
+  const iconResolver = new SteamIconResolver(steamInfo, installedGames);
+
   const cwd = Deno.cwd();
   const searchPaths = flags._.length ? flags._.map(String) : ["."];
 
   for (const searchPath of searchPaths) {
-    await processPath(resolve(cwd, searchPath), steamIconsPath);
+    await processPath(resolve(cwd, searchPath), steamInfo, iconResolver);
   }
 
+  const settingsForSummary = SettingsManager.getInstance();
+  
   if (!totalCount) {
-    console.log(
-      `❔ No Steam shortcuts were found. Did you specify a correct path?`,
-    );
+    const noFilesText = settingsForSummary.getSettings().accessibility.verboseMode
+      ? "[WARNING] No Steam shortcuts (.url files) were found in the specified path"
+      : `❔ No Steam shortcuts were found. Did you specify a correct path?`;
+    console.log(noFilesText);
   } else {
-    console.log(
-      `✨ Fixed ${fixedCount} of ${totalCount} shortcut icons`,
-    );
+    const summaryText = settingsForSummary.getSettings().accessibility.verboseMode
+      ? `[COMPLETE] Successfully fixed ${fixedCount} icons out of ${totalCount} total shortcuts`
+      : `✨ Fixed ${fixedCount} of ${totalCount} shortcut icons`;
+    console.log(summaryText);
   }
 }
 
-async function getSteamPathFromRegistry() {
-  console.log("📖 Searching in Windows registry");
+/**
+ * Gets comprehensive Steam information including all libraries
+ * @param customPath - Optional explicit Steam path
+ * @returns Steam installation info
+ * @throws Error if Steam not found
+ */
+async function getSteamInfo(customPath?: string): Promise<SteamInfo> {
+  console.log("🔍 Searching for Steam installation...");
 
-  const args = ["query", "HKCU\\Software\\Valve\\Steam", "/v", "SteamPath"];
-  const process = new Deno.Command("reg", { args });
-  const { stdout } = await process.output();
+  let steamInfo: SteamInfo | null = null;
 
-  const output = new TextDecoder().decode(stdout).trim();
-  const match = output.match(/SteamPath\s+REG_SZ\s+(.+)/);
-
-  if (!match) {
-    throw new Error("❌ Couldn't find Steam path in registry");
-  }
-
-  return match[1].trim();
-}
-
-async function resolveSteamIconsPath(installPath: string) {
-  console.log(`🔍 Checking "${installPath}"`);
-
-  const iconsPath = join(installPath, "/steam/games");
-  const isDirectory = await Deno.stat(iconsPath)
-    .then((info) => info.isDirectory)
-    .catch(() => false);
-
-  if (isDirectory) {
-    console.log(`📁 Found ${iconsPath}\n`);
-    return iconsPath;
+  if (customPath) {
+    // Try custom path first
+    const testInfo: SteamInfo = {
+      installPath: customPath,
+      configPath: join(customPath, "config"),
+      libraries: [{ path: customPath }],
+    };
+    
+    // Verify it's valid
+    const iconsPath = join(customPath, "steam/games");
+    const isValid = await Deno.stat(iconsPath)
+      .then((info) => info.isDirectory)
+      .catch(() => false);
+    
+    if (isValid) {
+      steamInfo = testInfo;
+      console.log(`✅ Using custom Steam path: ${customPath}`);
+    } else {
+      throw new Error(`❌ Invalid Steam path: ${customPath}`);
+    }
   } else {
-    throw new Error(`❌ Not a directory: ${iconsPath}`);
-  }
-}
-
-async function getSteamIconsPath(steampath?: string) {
-  console.log("🔍 Searching for steam installation path");
-
-  if (steampath) {
-    // Will not try to search elsewhere is steampath is specified explicitly
-    return await resolveSteamIconsPath(steampath);
+    // Use automatic detection
+    steamInfo = await SteamDetector.detect();
   }
 
-  // Check the default Steam folder first, then try checking in the Windows registry
-  return await resolveSteamIconsPath(DEFAULT_STEAM_PATH).catch(async () =>
-    resolveSteamIconsPath(await getSteamPathFromRegistry())
-  );
+  if (!steamInfo) {
+    throw new Error("❌ Steam installation not found");
+  }
+
+  console.log(`📁 Found Steam at: ${steamInfo.installPath}`);
+  
+  if (steamInfo.libraries.length > 1) {
+    console.log(`📚 Found ${steamInfo.libraries.length} Steam libraries:`);
+    for (const lib of steamInfo.libraries) {
+      console.log(`   • ${lib.path}${lib.label ? ` (${lib.label})` : ""}`);
+    }
+  }
+
+  return steamInfo;
 }
 
 let totalCount = 0;
 let fixedCount = 0;
 
-async function processShortcut(shortcutPath: string, steamIconsPath: string) {
+/**
+ * Processes a single Steam shortcut file
+ * @param shortcutPath - Path to the .url file
+ * @param steamInfo - Steam installation info
+ * @param iconResolver - Icon path resolver
+ */
+async function processShortcut(
+  shortcutPath: string,
+  steamInfo: SteamInfo,
+  iconResolver: SteamIconResolver,
+): Promise<void> {
   const linkContent = await Deno.readTextFile(shortcutPath);
 
   const appId = linkContent.match(/rungameid\/(.+)/m)?.[1];
@@ -99,47 +175,100 @@ async function processShortcut(shortcutPath: string, steamIconsPath: string) {
   }
 
   const iconName = iconPath[1].split("\\").pop()!;
-  const hasIconFile = await Deno.stat(join(steamIconsPath, iconName))
-    .then((info) => info.isFile)
-    .catch(() => false);
-  if (hasIconFile) {
-    return; // Nothing to fix
+  
+  // Get all possible icon paths
+  const possiblePaths = await iconResolver.resolveIconPaths(appId, iconName);
+  
+  // Check if icon already exists in any location
+  let iconExists = false;
+  for (const path of possiblePaths) {
+    const exists = await Deno.stat(path)
+      .then((info) => info.isFile)
+      .catch(() => false);
+    if (exists) {
+      iconExists = true;
+      break;
+    }
+  }
+  
+  if (iconExists) {
+    return; // Icon already exists
   }
 
-  // Thanks @Dark-talon for sharing this url
-  // https://github.com/mrsimb/steam_blank_icon_fix/issues/1#issuecomment-1897934510
-  const iconUrl =
-    `http://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${appId}/${iconName}`;
+  // Get CDN URLs to try
+  const iconUrls = iconResolver.getIconUrls(appId, iconName);
   console.log(`🌐 Fetching ${iconName}`);
 
-  const iconBuffer = await fetch(iconUrl).then((res) => res.arrayBuffer())
-    .catch(() => null);
+  let iconBuffer: ArrayBuffer | null = null;
+  let lastError = "";
+  
+  // Try each CDN URL until one succeeds
+  for (const url of iconUrls) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      });
+      if (response.ok) {
+        iconBuffer = await response.arrayBuffer();
+        break;
+      }
+      lastError = `HTTP ${response.status}`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Unknown error";
+    }
+  }
+  
   if (!iconBuffer) {
-    return console.log(`🚫 ${iconName} - failed to fetch\n`);
+    return console.log(`🚫 ${iconName} - failed to fetch: ${lastError}\n`);
   }
 
+  // Save to the primary Steam icons directory
+  const savePath = possiblePaths[0] || join(steamInfo.installPath, "steam/games", iconName);
   console.log(`💾 Saving ${iconName}`);
-  await Deno.writeFile(
-    join(steamIconsPath, iconName),
-    new Uint8Array(iconBuffer),
-  );
+  
+  // Ensure directory exists
+  const saveDir = savePath.substring(0, savePath.lastIndexOf("/"));
+  await Deno.mkdir(saveDir, { recursive: true }).catch(() => {});
+  
+  await Deno.writeFile(savePath, new Uint8Array(iconBuffer));
 
   fixedCount++;
   console.log(`☑️ ${shortcutPath}\n`);
 }
 
-async function processPath(path: string, steamIconsPath: string) {
+/**
+ * Recursively processes a path (file or directory)
+ * @param path - Path to process
+ * @param steamInfo - Steam installation info
+ * @param iconResolver - Icon path resolver
+ */
+async function processPath(
+  path: string,
+  steamInfo: SteamInfo,
+  iconResolver: SteamIconResolver,
+): Promise<void> {
   const info = await Deno.stat(path).catch(() => null);
   if (!info) return;
   if (info.isDirectory) {
-    for await (const entry of Deno.readDir(path)) {
-      await processPath(join(path, entry.name), steamIconsPath);
+    try {
+      for await (const entry of Deno.readDir(path)) {
+        await processPath(join(path, entry.name), steamInfo, iconResolver);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Failed to read directory ${path}: ${error.message}`);
+      }
     }
   } else if (info.isFile && extname(path) === ".url") {
-    await processShortcut(path, steamIconsPath).catch((error) =>
-      console.log(error)
-    );
+    await processShortcut(path, steamInfo, iconResolver).catch((error) => {
+      if (error instanceof Error) {
+        console.error(`Error processing ${path}: ${error.message}`);
+      }
+    });
   }
 }
 
-await main();
+// Only run main if this is the entry module
+if (import.meta.main) {
+  await main();
+}

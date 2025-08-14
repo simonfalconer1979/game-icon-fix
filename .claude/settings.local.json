@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(deno lint:*)",
+      "Bash(cmd /c:*)",
+      "Bash(deno:*)",
+      "Bash(copy steam-icon-fixer-advanced.bat steam-icon-fixer-advanced-fixed.bat)",
+      "Bash(del:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
