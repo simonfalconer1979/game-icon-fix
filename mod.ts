@@ -8,16 +8,32 @@ import { extname, join, resolve } from "jsr:@std/path@1.0.9";
 import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
 import { SettingsManager } from "./settings.ts";
 import { ShortcutManager } from "./shortcut_manager.ts";
+import { ConsoleConfig } from "./console_utils.ts";
 
 /**
  * Main entry point for CLI mode
  * Launches UI mode if no arguments provided
  */
 export async function main(): Promise<void> {
+  // Initialize console configuration for proper character display
+  const consoleConfig = ConsoleConfig.getInstance();
+  if (Deno.build.os === "windows") {
+    // Try to enable UTF-8 on Windows, fall back to ASCII if it fails
+    const utf8Enabled = await consoleConfig.tryEnableUTF8();
+    if (!utf8Enabled) {
+      console.log("Note: Using ASCII mode for better compatibility");
+    }
+  }
+  
   const flags = parseArgs(Deno.args, { 
     string: ["steampath", "accessibility"],
-    boolean: ["refresh-all"]
+    boolean: ["refresh-all", "ascii"]
   });
+  
+  // Force ASCII mode if requested
+  if (flags.ascii) {
+    consoleConfig.forceAsciiMode();
+  }
   
   // Handle accessibility flag
   if (flags.accessibility) {

@@ -7,8 +7,11 @@
       "Bash(copy steam-icon-fixer-advanced.bat steam-icon-fixer-advanced-fixed.bat)",
       "Bash(del:*)",
       "Bash(git add:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git push:*)",
+      "Bash(set STEAM_FIXER_ASCII=1)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

@@ -19,6 +19,7 @@ import {
   moveCursor,
   showCursor,
 } from "./ui.ts";
+import { ConsoleConfig } from "./console_utils.ts";
 
 // Removed unused constants and functions
 // Steam detection is now handled by SteamDetector class
@@ -33,10 +34,13 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
   clearScreen();
   displayBanner();
 
+  const config = ConsoleConfig.getInstance();
+  const icons = config.getIcons();
+  
   drawBox(15, 30, 55, 12, colors.fg.yellow);
   moveCursor(32, 17);
   console.log(
-    colors.fg.brightYellow + "🔍 Searching for Steam installation..." +
+    colors.fg.brightYellow + icons.search + " Searching for Steam installation..." +
       colors.reset,
   );
 
@@ -81,12 +85,12 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
   }
 
   moveCursor(36, 17);
-  console.log(colors.fg.green + `✓ Found Steam at: ${steamInfo.installPath}` + colors.reset);
+  console.log(colors.fg.green + icons.success + ` Found Steam at: ${steamInfo.installPath}` + colors.reset);
   
   if (steamInfo.libraries.length > 1) {
     moveCursor(37, 17);
     console.log(
-      colors.fg.green + `📚 Found ${steamInfo.libraries.length} Steam libraries` + colors.reset,
+      colors.fg.green + icons.folder + ` Found ${steamInfo.libraries.length} Steam libraries` + colors.reset,
     );
     
     // Show library paths
@@ -94,7 +98,7 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
     for (const lib of steamInfo.libraries.slice(0, 3)) {
       moveCursor(line++, 19);
       console.log(
-        colors.fg.white + `• ${lib.path.substring(0, 48)}` + colors.reset,
+        colors.fg.white + `${icons.bullet} ${lib.path.substring(0, 48)}` + colors.reset,
       );
     }
     
@@ -242,9 +246,11 @@ async function main(): Promise<void> {
     clearScreen();
     displayBanner();
     drawBox(15, 30, 55, 6, colors.fg.cyan);
+    const config = ConsoleConfig.getInstance();
+    const icons = config.getIcons();
     moveCursor(32, 17);
     console.log(
-      colors.fg.brightCyan + "🎮 Loading installed games..." + colors.reset,
+      colors.fg.brightCyan + icons.game + " Loading installed games..." + colors.reset,
     );
     
     const installedGames = await SteamDetector.getInstalledGames(steamInfo);
@@ -252,7 +258,7 @@ async function main(): Promise<void> {
     
     moveCursor(34, 17);
     console.log(
-      colors.fg.green + `✓ Found ${installedGames.size} installed games` + colors.reset,
+      colors.fg.green + icons.success + ` Found ${installedGames.size} installed games` + colors.reset,
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -319,8 +325,9 @@ async function main(): Promise<void> {
             colors.fg.cyan + "\nThanks for using Steam Icon Fixer!" +
               colors.reset,
           );
+          const heartIcon = config.isAsciiMode() ? "<3" : "♥";
           console.log(
-            colors.fg.gray + "Made with " + colors.fg.red + "♥" +
+            colors.fg.gray + "Made with " + colors.fg.red + heartIcon +
               colors.fg.gray + " in retro style\n" + colors.reset,
           );
           Deno.exit(0);

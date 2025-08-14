@@ -16,6 +16,7 @@ The most advanced Steam icon fixer with **enterprise-grade multi-library support
 
 ### 🎨 Interactive UI Mode
 - **Retro ASCII Art Interface** - Beautiful terminal-based UI with vibrant colors and box-drawing characters
+- **Windows Console Compatibility** - Automatic fallback to ASCII characters for legacy consoles
 - **Directory Browser** - Navigate and select folders with visual file tree
 - **Multi-File Selection** - Select specific files or entire directories with checkboxes
 - **Real-time Progress** - Animated progress bars and loading indicators
@@ -27,7 +28,7 @@ The most advanced Steam icon fixer with **enterprise-grade multi-library support
 - **Accessibility Presets** - One-click configurations for vision, motion, and cognitive needs
 - **No Animations Mode** - Static alternatives for motion-sensitive users
 - **High Contrast Mode** - Enhanced visibility for low vision users
-- **Simple ASCII Mode** - Compatible with all terminals and screen readers
+- **Simple ASCII Mode** - Compatible with all terminals, screen readers, and legacy Windows consoles
 - **Persistent Settings** - Remembers your accessibility preferences
 - **WCAG 2.1 AA Compliant** - Meets international accessibility standards
 
@@ -73,7 +74,10 @@ Launch the beautiful retro menu interface:
 deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon
 
 # With accessibility support
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --accessibility
+
+# Force ASCII mode for legacy consoles
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --ascii
 ```
 
 ### Using the Launcher (Recommended)
@@ -88,25 +92,28 @@ For automation and scripting:
 
 ```bash
 # Fix icons in current directory
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon .
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon .
 
 # Fix icons in specific directories
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon "C:/Users/username/Desktop/Games" "E:/Games"
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon "C:/Users/username/Desktop/Games" "E:/Games"
 
 # Fix specific shortcut files
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon "Desktop/Hades.url" "Desktop/Portal 2.url"
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon "Desktop/Hades.url" "Desktop/Portal 2.url"
 
 # Specify custom Steam installation path
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --steampath="D:/Programs/Steam"
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --steampath="D:/Programs/Steam"
 
 # Refresh ALL Steam shortcuts on desktop (delete and recreate)
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --refresh-all
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --refresh-all
 
 # Enable accessibility presets
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=vision .
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=motion .
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=cognitive .
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=full .
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=vision .
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=motion .
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=cognitive .
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --accessibility=full .
+
+# Force ASCII mode for better Windows compatibility
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --ascii .
 ```
 
 ### Drag and Drop Support
@@ -126,6 +133,7 @@ The tool requires these Deno permissions:
 | **Network** | `-N` | Download icon files from Steam CDN |
 | **Read** | `-R` | Read Steam folders and shortcut files |
 | **Write** | `-W` | Save fixed icon files to Steam directory |
+| **Environment** | `-E` | Access environment variables for console detection |
 | **Run** | `--allow-run` | Execute `reg.exe` to find Steam in Registry |
 
 You can run without permission flags to be prompted for each permission individually.
@@ -283,7 +291,10 @@ The tool now automatically:
 If it still can't find Steam:
 ```bash
 # Manually specify Steam path
-deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --steampath="C:/Program Files (x86)/Steam"
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --steampath="C:/Program Files (x86)/Steam"
+
+# Force ASCII mode if seeing garbled characters
+deno run -N -R -W -E --allow-run jsr:@mrsimb/steam-blank-icon --ascii
 ```
 
 ### Permission Denied
@@ -302,6 +313,12 @@ deno run -N -R -W --allow-run jsr:@mrsimb/steam-blank-icon --steampath="C:/Progr
 - Clear icon cache: Delete `%LOCALAPPDATA%\IconCache.db`
 - Reboot your computer
 
+### Garbled Characters or Box-Drawing Issues
+- Use ASCII mode: Add `--ascii` flag to your command
+- Set environment variable: `set STEAM_FIXER_ASCII=1`
+- Update your terminal to Windows Terminal for better Unicode support
+- Try different code pages: `chcp 65001` for UTF-8
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
@@ -314,10 +331,13 @@ git clone https://github.com/mrsimb/steam-blank-icon.git
 cd steam-blank-icon
 
 # Run in development mode
-deno run -N -R -W --allow-run mod.ts
+deno run -N -R -W -E --allow-run mod.ts
 
 # Run with accessibility testing
-deno run -N -R -W --allow-run mod.ts --accessibility=full
+deno run -N -R -W -E --allow-run mod.ts --accessibility=full
+
+# Test ASCII mode
+deno run -N -R -W -E --allow-run mod.ts --ascii
 
 # Type check
 deno check mod.ts mod_ui.ts
@@ -339,7 +359,20 @@ deno fmt
 
 ## 📝 Changelog
 
-### v3.1.0 (Latest) - Refresh All Shortcuts & Pure CLI
+### v3.1.1 (Latest) - Windows Console Compatibility
+- 🖥️ **Enhanced Console Support**
+  - Automatic detection of Windows console capabilities
+  - ASCII fallback for legacy cmd.exe and batch files
+  - Smart UTF-8/Unicode detection for modern terminals
+  - Environment variable support (`STEAM_FIXER_ASCII=1`)
+  - New `--ascii` CLI flag for forced compatibility
+- 🛠️ **Technical Improvements**
+  - New `console_utils.ts` module for character set management
+  - Improved batch file launcher with ASCII-safe menus
+  - Better error handling for environment access
+  - Updated all documentation with `-E` flag requirement
+
+### v3.1.0 - Refresh All Shortcuts & Pure CLI
 - 🔄 **Refresh ALL Desktop Shortcuts**
   - Delete and recreate all Steam shortcuts at once
   - Scan all libraries for installed games

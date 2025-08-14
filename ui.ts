@@ -4,6 +4,7 @@
  */
 
 import { UIManager } from "./ui_manager.ts";
+import { ConsoleConfig, type BoxChars, type IconChars } from "./console_utils.ts";
 
 // ANSI color codes for retro terminal styling
 export const colors = {
@@ -116,12 +117,14 @@ export function drawBox(
     throw new Error("Box position must be positive");
   }
 
-  const horizontal = "═";
-  const vertical = "║";
-  const topLeft = "╔";
-  const topRight = "╗";
-  const bottomLeft = "╚";
-  const bottomRight = "╝";
+  const config = ConsoleConfig.getInstance();
+  const box = config.getBox();
+  const horizontal = box.horizontal;
+  const vertical = box.vertical;
+  const topLeft = box.topLeft;
+  const topRight = box.topRight;
+  const bottomLeft = box.bottomLeft;
+  const bottomRight = box.bottomRight;
 
   // Top border
   moveCursor(y, x);
@@ -161,32 +164,64 @@ export function centerText(text: string, width: number): string {
  * Clears the screen first and positions the banner at the top
  */
 export function displayBanner(): void {
-  const banner = [
-    "╔═══════════════════════════════════════════════════════════════╗",
-    "║                                                               ║",
-    "║   ███████╗████████╗███████╗ █████╗ ███╗   ███╗               ║",
-    "║   ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║               ║",
-    "║   ███████╗   ██║   █████╗  ███████║██╔████╔██║               ║",
-    "║   ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║               ║",
-    "║   ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║               ║",
-    "║   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝               ║",
-    "║                                                               ║",
-    "║            ██╗ ██████╗ ██████╗ ███╗   ██╗                    ║",
-    "║            ██║██╔════╝██╔═══██╗████╗  ██║                    ║",
-    "║            ██║██║     ██║   ██║██╔██╗ ██║                    ║",
-    "║            ██║██║     ██║   ██║██║╚██╗██║                    ║",
-    "║            ██║╚██████╗╚██████╔╝██║ ╚████║                    ║",
-    "║            ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝                    ║",
-    "║                                                               ║",
-    "║               ███████╗██╗██╗  ██╗███████╗██████╗             ║",
-    "║               ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗            ║",
-    "║               █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝            ║",
-    "║               ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗            ║",
-    "║               ██║     ██║██╔╝ ██╗███████╗██║  ██║            ║",
-    "║               ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝            ║",
-    "║                                                               ║",
-    "╚═══════════════════════════════════════════════════════════════╝",
-  ];
+  const config = ConsoleConfig.getInstance();
+  const box = config.getBox();
+  
+  // Create dynamic banner with appropriate characters
+  const banner = config.isAsciiMode() ? 
+    // ASCII version
+    [
+      "+" + "=".repeat(65) + "+",
+      "|                                                               |",
+      "|    SSSSS TTTTT EEEEE  AAA  M   M                             |",
+      "|   S        T   E     A   A MM MM                             |",
+      "|    SSS     T   EEE   AAAAA M M M                             |",
+      "|       S    T   E     A   A M   M                             |",
+      "|   SSSSS    T   EEEEE A   A M   M                             |",
+      "|                                                               |",
+      "|            III  CCC   OOO  N   N                             |",
+      "|             I  C   C O   O NN  N                             |",
+      "|             I  C     O   O N N N                             |",
+      "|             I  C   C O   O N  NN                             |",
+      "|            III  CCC   OOO  N   N                             |",
+      "|                                                               |",
+      "|               FFFFF III X   X EEEEE RRRR                     |",
+      "|               F      I   X X  E     R   R                    |",
+      "|               FFF    I    X   EEE   RRRR                     |",
+      "|               F      I   X X  E     R  R                     |",
+      "|               F     III X   X EEEEE R   R                    |",
+      "|                                                               |",
+      "|                        Version 3.1                           |",
+      "|                                                               |",
+      "+" + "=".repeat(65) + "+",
+    ] :
+    // UTF-8 version (original)
+    [
+      box.topLeft + box.horizontal.repeat(65) + box.topRight,
+      box.vertical + "                                                               " + box.vertical,
+      box.vertical + "   ███████╗████████╗███████╗ █████╗ ███╗   ███╗               " + box.vertical,
+      box.vertical + "   ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║               " + box.vertical,
+      box.vertical + "   ███████╗   ██║   █████╗  ███████║██╔████╔██║               " + box.vertical,
+      box.vertical + "   ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║               " + box.vertical,
+      box.vertical + "   ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║               " + box.vertical,
+      box.vertical + "   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝               " + box.vertical,
+      box.vertical + "                                                               " + box.vertical,
+      box.vertical + "            ██╗ ██████╗ ██████╗ ███╗   ██╗                    " + box.vertical,
+      box.vertical + "            ██║██╔════╝██╔═══██╗████╗  ██║                    " + box.vertical,
+      box.vertical + "            ██║██║     ██║   ██║██╔██╗ ██║                    " + box.vertical,
+      box.vertical + "            ██║██║     ██║   ██║██║╚██╗██║                    " + box.vertical,
+      box.vertical + "            ██║╚██████╗╚██████╔╝██║ ╚████║                    " + box.vertical,
+      box.vertical + "            ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝                    " + box.vertical,
+      box.vertical + "                                                               " + box.vertical,
+      box.vertical + "               ███████╗██╗██╗  ██╗███████╗██████╗             " + box.vertical,
+      box.vertical + "               ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗            " + box.vertical,
+      box.vertical + "               █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝            " + box.vertical,
+      box.vertical + "               ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗            " + box.vertical,
+      box.vertical + "               ██║     ██║██╔╝ ██╗███████╗██║  ██║            " + box.vertical,
+      box.vertical + "               ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝            " + box.vertical,
+      box.vertical + "                                                               " + box.vertical,
+      box.bottomLeft + box.horizontal.repeat(65) + box.bottomRight,
+    ];
 
   clearScreen();
   let row = 2;
@@ -263,11 +298,13 @@ export function showStatus(
   x: number,
   y: number,
 ): void {
+  const config = ConsoleConfig.getInstance();
+  const iconSet = config.getIcons();
   const icons = {
-    success: "✓",
-    error: "✗",
-    warning: "⚠",
-    info: "ℹ",
+    success: iconSet.success,
+    error: iconSet.error,
+    warning: iconSet.warning,
+    info: iconSet.info,
   };
 
   const statusColors = {
@@ -299,11 +336,16 @@ export function drawMenuItem(
   isSelected: boolean,
   width: number,
 ): void {
+  const config = ConsoleConfig.getInstance();
+  const icons = config.getIcons();
+  const arrow = icons.arrow;
+  
   moveCursor(y, x);
   if (isSelected) {
+    const prefix = config.isAsciiMode() ? " > " : " " + arrow + " ";
     console.log(
       colors.bg.blue + colors.fg.white + colors.bright +
-        " ▶ " + text.padEnd(width - 3) +
+        prefix + text.padEnd(width - prefix.length) +
         colors.reset,
     );
   } else {
@@ -326,8 +368,10 @@ export function drawDivider(
   width: number,
   color = colors.fg.gray,
 ): void {
+  const config = ConsoleConfig.getInstance();
+  const dividerChar = config.isAsciiMode() ? "-" : "─";
   moveCursor(y, x);
-  console.log(color + "─".repeat(width) + colors.reset);
+  console.log(color + dividerChar.repeat(width) + colors.reset);
 }
 
 /**
