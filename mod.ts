@@ -19,6 +19,7 @@ import {
   drawBoxWithShadow,
   drawCenteredBoxWithShadow,
   drawStatusBar,
+  getScreenSize,
   moveCursor,
   showCursor,
   turboPascal,
@@ -36,6 +37,11 @@ import { setupFixedConsole } from "./fixed_console.ts";
  */
 async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
   displayTurboPascalBanner();
+  
+  // Draw title bar at top
+  const { width } = getScreenSize();
+  writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Steam Detection", width) + colors.reset);
+  
   drawStatusBar(" Detecting Steam Installation...");
 
   const config = ConsoleConfig.getInstance();
@@ -162,6 +168,10 @@ async function processCurrentDirectory(steamInfo: SteamInfo, iconResolver: Steam
 
   if (files.length === 0) {
     displayTurboPascalBanner();
+    
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - No Files Found", width) + colors.reset);
+    
     drawStatusBar(" No Files Found");
 
     const errDlg = drawCenteredBoxWithShadow(55, 8);
@@ -210,6 +220,10 @@ async function processDesktop(steamInfo: SteamInfo, iconResolver: SteamIconResol
 
   if (files.length === 0) {
     displayTurboPascalBanner();
+    
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - No Files Found", width) + colors.reset);
+    
     drawStatusBar(" No Files Found");
 
     const errDlg = drawCenteredBoxWithShadow(55, 8);
@@ -265,6 +279,10 @@ export async function main(): Promise<void> {
     // Load installed games for better icon resolution
     clearScreen();
     displayTurboPascalBanner();
+    
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Loading Games", width) + colors.reset);
+    
     const loadDlg = drawCenteredBoxWithShadow(55, 6, colors.fg.cyan);
     const config = ConsoleConfig.getInstance();
     const icons = config.getIcons();
@@ -353,6 +371,10 @@ export async function main(): Promise<void> {
         default: {
           // Non-routed commands (view/help/about) can show a simple dialog for now
           displayTurboPascalBanner();
+          
+          const { width } = getScreenSize();
+          writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer", width) + colors.reset);
+          
           const infoDlg = drawCenteredBoxWithShadow(50, 8);
           writeAt(infoDlg.y + 2, infoDlg.x + 2,
             turboPascal.windowBg + turboPascal.text + `Command: ${cmd}` + colors.reset

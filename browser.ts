@@ -3,18 +3,23 @@
  * Provides interactive file/folder selection with keyboard control
  */
 
-import { dirname, join, resolve } from "jsr:@std/path@1.0.9";
+import { dirname, join, resolve } from "@std/path";
 import {
   centerText,
   clearScreen,
   colors,
-  displayBanner,
+  displayTurboPascalBanner,
   drawBox,
   drawDivider,
+  drawTextWithShadow,
+  getScreenSize,
   hideCursor,
   moveCursor,
   showCursor,
-  showStatus,
+  showCenteredStatus,
+  getCenteredPosition,
+  turboPascal,
+  writeAt,
 } from "./ui.ts";
 
 /**
@@ -42,6 +47,9 @@ export class PathBrowser {
   private readonly displayHeight = 15;
   private readonly multiSelect: boolean;
   private selectedPaths: Set<string> = new Set();
+  // Centered layout base coordinates (computed in draw)
+  private baseX = 10;
+  private baseY = 26;
 
   /**
    * Creates a new PathBrowser instance
@@ -97,14 +105,12 @@ export class PathBrowser {
       });
     } catch (error) {
       if (error instanceof Error) {
-        showStatus(
+        showCenteredStatus(
           "error",
           `Failed to read directory: ${error.message}`,
-          15,
-          40,
         );
       } else {
-        showStatus("error", "Failed to read directory", 15, 40);
+        showCenteredStatus("error", "Failed to read directory");
       }
       // Add a dummy entry to prevent empty display
       this.entries.push({
@@ -121,31 +127,43 @@ export class PathBrowser {
    */
   private draw(): void {
     clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
 
-    // Draw current path
-    drawTextWithShadow("DIRECTORY BROWSER", 25, 26, colors.fg.yellow);
+    // Draw title bar at top
+    const { width: screenWidth } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - File Browser", screenWidth) + colors.reset);
+
+    const width = 65;
+    const height = this.displayHeight + 19; // title + path box + main + help/stats
+    const { x, y } = getCenteredPosition(width, height);
+    this.baseX = x;
+    this.baseY = y - 5;
+
+    // Draw current path (centered title within width)
+    const title = "DIRECTORY BROWSER";
+    const titleX = this.baseX + Math.max(0, Math.floor((width - title.length) / 2));
+    drawTextWithShadow(title, titleX, this.baseY, colors.fg.yellow);
 
     // Path display box
-    drawBox(10, 28, 65, 3, colors.fg.cyan);
-    moveCursor(29, 12);
+    drawBox(this.baseX, this.baseY + 2, width, 3, colors.fg.cyan);
+    moveCursor(this.baseY + 3, this.baseX + 2);
     console.log(
       colors.fg.brightCyan + "Path: " + colors.fg.white +
-        this.truncatePath(this.currentPath, 55) + colors.reset,
+        this.truncatePath(this.currentPath, width - 10) + colors.reset,
     );
 
     // Main browser box
-    drawBox(10, 32, 65, this.displayHeight + 4, colors.fg.magenta);
+    drawBox(this.baseX, this.baseY + 6, width, this.displayHeight + 4, colors.fg.magenta);
 
     // Column headers
-    moveCursor(33, 12);
+    moveCursor(this.baseY + 7, this.baseX + 2);
     console.log(
       colors.fg.brightMagenta + colors.underscore +
-        "Name".padEnd(50) + "Type".padEnd(10) +
+        "Name".padEnd(width - 20) + "Type".padEnd(10) +
         colors.reset,
     );
 
-    drawDivider(11, 34, 63, colors.fg.magenta);
+    drawDivider(this.baseX + 1, this.baseY + 8, width - 2, colors.fg.magenta);
 
     // Display entries
     const visibleEntries = this.entries.slice(
@@ -157,7 +175,7 @@ export class PathBrowser {
       const globalIndex = index + this.scrollOffset;
       const isHighlighted = globalIndex === this.selectedIndex;
 
-      moveCursor(35 + index, 12);
+      moveCursor(this.baseY + 9 + index, this.baseX + 2);
 
       // Selection indicator and highlighting
       if (isHighlighted) {
@@ -173,11 +191,11 @@ export class PathBrowser {
         ? (entry.isSelected ? "[✓] " : "[ ] ")
         : (isHighlighted ? " ▶ " : "   ");
 
-      const name = this.truncateName(entry.name, 45);
+      const name = this.truncateName(entry.name, width - 20);
       const type = entry.isDirectory ? "DIR" : "FILE";
 
       console.log(
-        checkbox + name.padEnd(47) + type.padEnd(10) + colors.reset,
+        checkbox + name.padEnd(width - 18) + type.padEnd(10) + colors.reset,
       );
     });
 
@@ -187,10 +205,10 @@ export class PathBrowser {
     }
 
     // Help text
-    moveCursor(32 + this.displayHeight + 3, 12);
+    moveCursor(this.baseY + 6 + this.displayHeight + 3, this.baseX + 2);
     console.log(
       colors.fg.gray + colors.dim +
-        centerText(this.getHelpText(), 61) +
+        centerText(this.getHelpText(), width - 4) +
         colors.reset,
     );
 
@@ -211,7 +229,7 @@ export class PathBrowser {
       : 0;
 
     for (let i = 0; i < scrollbarHeight; i++) {
-      moveCursor(35 + i, 74);
+      moveCursor(this.baseY + 9 + i, this.baseX + 65 - 1);
       if (i === scrollPosition) {
         console.log(colors.fg.brightCyan + "█" + colors.reset);
       } else {
@@ -225,7 +243,9 @@ export class PathBrowser {
       ? `Selected: ${this.selectedPaths.size} │ Total: ${this.entries.length}`
       : `Items: ${this.entries.length}`;
 
-    moveCursor(50, 12);
+    const width = 65;
+    const height = this.displayHeight + 19;
+    moveCursor(this.baseY + height - 2, this.baseX + 2);
     console.log(colors.fg.yellow + stats + colors.reset);
   }
 
@@ -418,23 +438,4 @@ export class PathBrowser {
   }
 }
 
-/**
- * Local helper to draw text with shadow
- * @param text - Text to display
- * @param x - Column position
- * @param y - Row position
- * @param color - Text color
- */
-function drawTextWithShadow(
-  text: string,
-  x: number,
-  y: number,
-  color: string,
-): void {
-  // Draw shadow
-  moveCursor(y + 1, x + 1);
-  console.log(colors.fg.black + colors.dim + text + colors.reset);
-  // Draw text
-  moveCursor(y, x);
-  console.log(color + colors.bright + text + colors.reset);
-}
+ 

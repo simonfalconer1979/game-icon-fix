@@ -3,20 +3,23 @@
  * Handles deletion and recreation of Steam game shortcuts
  */
 
-import { join } from "jsr:@std/path@1.0.9";
+import { join } from "@std/path";
 import { SteamDetector, type SteamInfo } from "./steam_detector.ts";
 import { SettingsManager } from "./settings.ts";
 import { UIManager } from "./ui_manager.ts";
 import {
   colors,
   clearScreen,
-  displayBanner,
+  displayTurboPascalBanner,
   drawBox,
   drawDivider,
   drawProgressBar,
   drawTextWithShadow,
+  getScreenSize,
   moveCursor,
   centerText,
+  turboPascal,
+  writeAt,
 } from "./ui.ts";
 
 /**
@@ -54,12 +57,16 @@ export class ShortcutManager {
    */
   async refreshAllShortcuts(): Promise<void> {
     clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
 
-    drawTextWithShadow("REFRESHING STEAM SHORTCUTS", 23, 26, colors.fg.yellow);
-    drawBox(10, 28, 65, 20, colors.fg.cyan);
+    // Draw title bar at top
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Refresh Shortcuts", width) + colors.reset);
 
-    moveCursor(30, 12);
+    drawTextWithShadow("REFRESHING STEAM SHORTCUTS", 23, 20, colors.fg.yellow);
+    drawBox(10, 22, 65, 20, colors.fg.cyan);
+
+    moveCursor(24, 12);
     console.log(colors.fg.brightCyan + "Scanning for installed games..." + colors.reset);
 
     // Get all installed games
@@ -140,10 +147,14 @@ export class ShortcutManager {
 
     // Show results
     clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
     
-    drawTextWithShadow("REFRESH COMPLETE", 28, 26, colors.fg.green);
-    drawBox(10, 28, 65, 10, colors.fg.green);
+    // Draw title bar at top
+    const { width: screenWidth } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Refresh Complete", screenWidth) + colors.reset);
+    
+    drawTextWithShadow("REFRESH COMPLETE", 28, 20, colors.fg.green);
+    drawBox(10, 22, 65, 10, colors.fg.green);
 
     const results = [
       `Games Found: ${games.length}`,
@@ -153,7 +164,7 @@ export class ShortcutManager {
     ];
 
     results.forEach((line, index) => {
-      moveCursor(30 + index * 2, 25);
+      moveCursor(24 + index * 2, 25);
       console.log(colors.fg.white + centerText(line, 55) + colors.reset);
     });
 

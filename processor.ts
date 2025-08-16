@@ -3,7 +3,7 @@
  * Handles batch processing with progress tracking and result reporting
  */
 
-import { basename, join } from "jsr:@std/path@1.0.9";
+import { basename, join } from "@std/path";
 import type { SteamInfo, SteamIconResolver } from "./steam_detector.ts";
 import { SettingsManager } from "./settings.ts";
 import { UIManager } from "./ui_manager.ts";
@@ -12,13 +12,16 @@ import {
   centerText,
   clearScreen,
   colors,
-  displayBanner,
+  displayTurboPascalBanner,
   drawBox,
   drawDivider,
   drawProgressBar,
   drawTextWithShadow,
+  getScreenSize,
   moveCursor,
   showLoading,
+  turboPascal,
+  writeAt,
 } from "./ui.ts";
 
 /**
@@ -79,13 +82,17 @@ export class IconProcessor {
     this.results = [];
 
     clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
+
+    // Draw title bar at top
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Processing Icons", width) + colors.reset);
 
     // Draw processing header
-    drawTextWithShadow("PROCESSING ICONS", 27, 26, colors.fg.yellow);
+    drawTextWithShadow("PROCESSING ICONS", 27, 20, colors.fg.yellow);
 
     // Draw main processing box
-    drawBox(10, 28, 65, 20, colors.fg.cyan);
+    drawBox(10, 22, 65, 20, colors.fg.cyan);
 
     // Show file count
     moveCursor(29, 12);
@@ -298,13 +305,17 @@ export class IconProcessor {
    */
   private async showResults(): Promise<void> {
     clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
+
+    // Draw title bar at top
+    const { width } = getScreenSize();
+    writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Results", width) + colors.reset);
 
     // Results header
-    drawTextWithShadow("PROCESSING COMPLETE", 25, 26, colors.fg.green);
+    drawTextWithShadow("PROCESSING COMPLETE", 25, 20, colors.fg.green);
 
     // Summary box
-    drawBox(10, 28, 65, 8, colors.fg.green);
+    drawBox(10, 22, 65, 8, colors.fg.green);
 
     moveCursor(30, 12);
     console.log(
@@ -328,7 +339,7 @@ export class IconProcessor {
 
     // Detailed results box
     if (this.results.some((r) => !r.success)) {
-      drawBox(10, 37, 65, 12, colors.fg.red);
+      drawBox(10, 31, 65, 12, colors.fg.red);
 
       moveCursor(38, 12);
       console.log(

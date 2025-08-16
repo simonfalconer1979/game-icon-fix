@@ -649,7 +649,7 @@ export function drawMenuItemWithHotkey(
 }
 
 /**
- * Displays the Turbo Pascal style banner (VGA 80×30)
+ * Initializes the screen with Turbo Pascal style background
  */
 export function displayTurboPascalBanner(): void {
   clearScreen();
@@ -658,41 +658,6 @@ export function displayTurboPascalBanner(): void {
   // Fill background with blue to full SVGA text grid
   for (let i = 1; i <= height; i++) {
     writeAt(i, 1, turboPascal.background + " ".repeat(width) + colors.reset);
-  }
-
-  const config = ConsoleConfig.getInstance();
-  // Compact banner for VGA 80×30 display
-  const banner = config.isAsciiMode() ? 
-    [
-      "  ##### ##### ##### #   #    ##### ### #   # ##### ####",
-      "  #       #   #     #   #    #      #   # #  #     #   #",
-      "  #####   #   ####  #####    ####   #    #   ####  ####",
-      "      #   #   #     #   #    #      #   # #  #     #  #",
-      "  #####   #   ##### #   #    #     ###  # #  ##### #   #",
-      "",
-      "          ═══[ Version 1.0 - SVGA 1280×1024 ]═══",
-    ] :
-    [
-      "  ███████╗████████╗███████╗ █████╗ ███╗   ███╗",
-      "  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║",
-      "  ███████╗   ██║   █████╗  ███████║██╔████╔██║",
-      "  ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║",
-      "  ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║",
-      "",
-      "  ███████╗██╗██╗  ██╗███████╗██████╗",
-      "  ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗",
-      "  █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝",
-      "  ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗",
-      "  ██║     ██║██╔╝ ██╗███████╗██║  ██║",
-      "",
-      "       ═══[ SVGA 1280×1024 Edition ]═══",
-    ];
-  
-  let row = 3;
-  for (const line of banner) {
-    writeAt(row++, Math.floor((width - line.length) / 2) + 1,
-      turboPascal.background + turboPascal.text + colors.bright + line + colors.reset
-    );
   }
 }
 

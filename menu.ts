@@ -19,6 +19,7 @@ import {
   drawMenuBar,
   drawPulldownMenu,
   getCenteredPosition,
+  getScreenSize,
   hideCursor,
   moveCursor,
   showCursor,
@@ -239,6 +240,10 @@ export class Menu {
 export async function showTopMenu(): Promise<string | null> {
   displayTurboPascalBanner();
 
+  // Draw title bar at top
+  const { width } = getScreenSize();
+  writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer v1.0", width) + colors.reset);
+  
   // Draw status bar at SVGA bottom
   drawStatusBar(" F1=Help  F10=Exit");
 
@@ -274,10 +279,10 @@ export async function showTopMenu(): Promise<string | null> {
   ];
 
   // Center menu on SVGA screen (160×64)
-  const width = 50;
-  const height = menuItems.length + 6;
-  const { x, y } = getCenteredPosition(width, height);
-  const menu = new Menu("MAIN MENU", menuItems, x, y, width);
+  const menuWidth = 50;
+  const menuHeight = menuItems.length + 6;
+  const { x, y } = getCenteredPosition(menuWidth, menuHeight);
+  const menu = new Menu("MAIN MENU", menuItems, x, y - 5, menuWidth);
   const result = await menu.show();
   
   // Handle F-key shortcuts
@@ -293,6 +298,11 @@ export async function showTopMenu(): Promise<string | null> {
  */
 export async function showSettingsMenu(): Promise<void> {
   displayTurboPascalBanner();
+  
+  // Draw title bar at top
+  const { width: screenWidth } = getScreenSize();
+  writeAt(1, 1, turboPascal.menuBar + centerText("Steam Icon Fixer - Settings", screenWidth) + colors.reset);
+  
   drawStatusBar(" F1=Help  ESC=Back");
 
   const settingsItems: MenuItem[] = [
@@ -336,10 +346,10 @@ export async function showSettingsMenu(): Promise<void> {
   ];
 
   // Center menu on SVGA screen
-  const width = 50;
-  const height = settingsItems.length + 6;
-  const { x, y } = getCenteredPosition(width, height);
-  const menu = new Menu("SETTINGS", settingsItems, x, y, width);
+  const menuWidth = 50;
+  const menuHeight = settingsItems.length + 6;
+  const { x, y } = getCenteredPosition(menuWidth, menuHeight);
+  const menu = new Menu("SETTINGS", settingsItems, x, y - 5, menuWidth);
   const choice = await menu.show();
   
   // Handle settings choices
