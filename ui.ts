@@ -57,6 +57,44 @@ export const colors = {
   },
 };
 
+/**
+ * Returns the logical screen size for SVGA text mode (1280×1024).
+ * Using an 8×16 font, this maps to 160 columns × 64 rows.
+ */
+export function getScreenSize() {
+  return { width: 160, height: 64 };
+}
+
+/**
+ * Computes the top-left coordinates to center a box within the SVGA grid
+ * @param boxWidth - Box width in characters
+ * @param boxHeight - Box height in characters
+ * @returns { x, y } starting coordinates (1-indexed)
+ */
+export function getCenteredPosition(boxWidth: number, boxHeight: number): { x: number; y: number } {
+  const { width, height } = getScreenSize();
+  const x = Math.floor((width - boxWidth) / 2) + 1;
+  const y = Math.floor((height - boxHeight) / 2) + 1;
+  return { x, y };
+}
+
+/**
+ * Draws a centered box with shadow and returns its geometry for content placement
+ * @param boxWidth - Box width
+ * @param boxHeight - Box height
+ * @returns { x, y, width, height } geometry of the box
+ */
+export function drawCenteredBoxWithShadow(
+  boxWidth: number,
+  boxHeight: number,
+  frameColor = turboPascal.windowFrame,
+  fillBg = turboPascal.windowBg,
+): { x: number; y: number; width: number; height: number } {
+  const { x, y } = getCenteredPosition(boxWidth, boxHeight);
+  drawBoxWithShadow(x, y, boxWidth, boxHeight, frameColor, fillBg);
+  return { x, y, width: boxWidth, height: boxHeight };
+}
+
 // Turbo Pascal IDE Color Scheme (circa 1990s)
 export const turboPascal = {
   // Main UI colors
@@ -95,6 +133,21 @@ export function clearScreen(): void {
 export function moveCursor(row: number, col: number): void {
   const ui = UIManager.getInstance();
   ui.moveCursor(row, col);
+}
+
+/**
+ * Writes text at current cursor position without newline
+ */
+export function write(text: string): void {
+  Deno.stdout.writeSync(new TextEncoder().encode(text));
+}
+
+/**
+ * Writes text at specific position without newline
+ */
+export function writeAt(row: number, col: number, text: string): void {
+  moveCursor(row, col);
+  write(text);
 }
 
 /**
@@ -148,25 +201,15 @@ export function drawBox(
   const bottomRight = box.bottomRight;
 
   // Top border
-  moveCursor(y, x);
-  console.log(
-    color + topLeft + horizontal.repeat(width - 2) + topRight + colors.reset,
-  );
+  writeAt(y, x, color + topLeft + horizontal.repeat(width - 2) + topRight + colors.reset);
 
   // Side borders
   for (let i = 1; i < height - 1; i++) {
-    moveCursor(y + i, x);
-    console.log(
-      color + vertical + " ".repeat(width - 2) + vertical + colors.reset,
-    );
+    writeAt(y + i, x, color + vertical + " ".repeat(width - 2) + vertical + colors.reset);
   }
 
   // Bottom border
-  moveCursor(y + height - 1, x);
-  console.log(
-    color + bottomLeft + horizontal.repeat(width - 2) + bottomRight +
-      colors.reset,
-  );
+  writeAt(y + height - 1, x, color + bottomLeft + horizontal.repeat(width - 2) + bottomRight + colors.reset);
 }
 
 /**
@@ -242,8 +285,7 @@ export function displayBanner(): void {
   clearScreen();
   let row = 2;
   for (const line of banner) {
-    moveCursor(row++, 20);
-    console.log(colors.fg.cyan + colors.bright + line + colors.reset);
+    writeAt(row++, 20, colors.fg.cyan + colors.bright + line + colors.reset);
   }
 }
 
@@ -261,11 +303,7 @@ let loadingIndex = 0;
  * @param y - Row position
  */
 export function showLoading(message: string, x: number, y: number): void {
-  moveCursor(y, x);
-  console.log(
-    colors.fg.yellow + loadingFrames[loadingIndex] + " " + message +
-      colors.reset,
-  );
+  writeAt(y, x, colors.fg.yellow + loadingFrames[loadingIndex] + " " + message + colors.reset);
   loadingIndex = (loadingIndex + 1) % loadingFrames.length;
 }
 
@@ -290,14 +328,13 @@ export function drawProgressBar(
   const empty = width - filled;
   const percentage = Math.floor((current / total) * 100);
 
-  moveCursor(y, x);
-  console.log(
+  writeAt(y, x,
     colors.fg.cyan + "[" +
-      colors.fg.green + "█".repeat(filled) +
-      colors.fg.gray + "░".repeat(empty) +
-      colors.fg.cyan + "] " +
-      colors.fg.white + percentage + "% " + label +
-      colors.reset,
+    colors.fg.green + "█".repeat(filled) +
+    colors.fg.gray + "░".repeat(empty) +
+    colors.fg.cyan + "] " +
+    colors.fg.white + percentage + "% " + label +
+    colors.reset
   );
 }
 
@@ -330,11 +367,53 @@ export function showStatus(
     info: colors.fg.cyan,
   };
 
-  moveCursor(y, x);
-  console.log(
+  writeAt(y, x,
     statusColors[type] + colors.bright + icons[type] + " " + colors.reset +
-      statusColors[type] + message + colors.reset,
+    statusColors[type] + message + colors.reset
   );
+}
+
+/**
+ * Displays a centered status message on the screen
+ * @param type - The type of status (success, error, warning, info)
+ * @param message - The status message to display
+ * @param y - Optional row override; defaults to vertical center of the screen
+ */
+export function showCenteredStatus(
+  type: "success" | "error" | "warning" | "info",
+  message: string,
+  y?: number,
+): void {
+  const config = ConsoleConfig.getInstance();
+  const iconSet = config.getIcons();
+  const icon = iconSet[type];
+  const { width, height } = getScreenSize();
+  const renderedLen = icon.length + 1 + message.length; // icon + space + text
+  const x = Math.floor((width - renderedLen) / 2) + 1;
+  const row = y ?? Math.floor(height / 2);
+  showStatus(type, message, x, row);
+}
+
+/**
+ * Displays a centered status message within a specific box geometry
+ * @param type - The type of status (success, error, warning, info)
+ * @param message - The status message
+ * @param geom - Box geometry returned by drawCenteredBoxWithShadow()
+ * @param rowOffset - Optional relative row offset from the box's vertical center
+ */
+export function showStatusInBox(
+  type: "success" | "error" | "warning" | "info",
+  message: string,
+  geom: { x: number; y: number; width: number; height: number },
+  rowOffset = 0,
+): void {
+  const config = ConsoleConfig.getInstance();
+  const iconSet = config.getIcons();
+  const icon = iconSet[type];
+  const renderedLen = icon.length + 1 + message.length;
+  const x = geom.x + Math.max(0, Math.floor((geom.width - renderedLen) / 2));
+  const y = geom.y + Math.floor(geom.height / 2) + rowOffset;
+  showStatus(type, message, x, y);
 }
 
 /**
@@ -356,17 +435,16 @@ export function drawMenuItem(
   const icons = config.getIcons();
   const arrow = icons.arrow;
   
-  moveCursor(y, x);
   if (isSelected) {
     const prefix = config.isAsciiMode() ? " > " : " " + arrow + " ";
-    console.log(
+    writeAt(y, x,
       colors.bg.blue + colors.fg.white + colors.bright +
-        prefix + text.padEnd(width - prefix.length) +
-        colors.reset,
+      prefix + text.padEnd(width - prefix.length) +
+      colors.reset
     );
   } else {
-    console.log(
-      colors.fg.gray + "   " + text.padEnd(width - 3) + colors.reset,
+    writeAt(y, x,
+      colors.fg.gray + "   " + text.padEnd(width - 3) + colors.reset
     );
   }
 }
@@ -386,8 +464,7 @@ export function drawDivider(
 ): void {
   const config = ConsoleConfig.getInstance();
   const dividerChar = config.isAsciiMode() ? "-" : "─";
-  moveCursor(y, x);
-  console.log(color + dividerChar.repeat(width) + colors.reset);
+  writeAt(y, x, color + dividerChar.repeat(width) + colors.reset);
 }
 
 /**
@@ -398,8 +475,7 @@ export function drawDivider(
  * @param y - Row position
  */
 export function blinkText(text: string, x: number, y: number): void {
-  moveCursor(y, x);
-  console.log(colors.blink + colors.fg.brightYellow + text + colors.reset);
+  writeAt(y, x, colors.blink + colors.fg.brightYellow + text + colors.reset);
 }
 
 /**
@@ -416,11 +492,9 @@ export function drawTextWithShadow(
   color = colors.fg.white,
 ): void {
   // Draw shadow
-  moveCursor(y + 1, x + 1);
-  console.log(colors.fg.black + colors.dim + text + colors.reset);
+  writeAt(y + 1, x + 1, colors.fg.black + colors.dim + text + colors.reset);
   // Draw text
-  moveCursor(y, x);
-  console.log(color + colors.bright + text + colors.reset);
+  writeAt(y, x, color + colors.bright + text + colors.reset);
 }
 
 /**
@@ -445,56 +519,66 @@ export function drawBoxWithShadow(
   
   // Draw shadow first (offset by 1,1)
   for (let i = 1; i < height; i++) {
-    moveCursor(y + i + 1, x + width);
-    console.log(colors.fg.black + shadowChar.repeat(2) + colors.reset);
+    writeAt(y + i + 1, x + width, colors.fg.black + shadowChar.repeat(2) + colors.reset);
   }
-  moveCursor(y + height, x + 2);
-  console.log(colors.fg.black + shadowChar.repeat(width) + colors.reset);
+  writeAt(y + height, x + 2, colors.fg.black + shadowChar.repeat(width) + colors.reset);
   
   // Draw the filled box
   const box = config.getBox();
   
   // Top border
-  moveCursor(y, x);
-  console.log(
+  writeAt(y, x,
     frameColor + fillBg + box.topLeft + box.horizontal.repeat(width - 2) + box.topRight + colors.reset
   );
   
   // Side borders with filled background
   for (let i = 1; i < height - 1; i++) {
-    moveCursor(y + i, x);
-    console.log(
+    writeAt(y + i, x,
       frameColor + fillBg + box.vertical + " ".repeat(width - 2) + box.vertical + colors.reset
     );
   }
   
   // Bottom border
-  moveCursor(y + height - 1, x);
-  console.log(
+  writeAt(y + height - 1, x,
     frameColor + fillBg + box.bottomLeft + box.horizontal.repeat(width - 2) + box.bottomRight + colors.reset
   );
 }
 
 /**
  * Draws a DOS-style status bar at the bottom of the screen
- * @param width - Width of the status bar (80 for VGA)
- * @param height - Screen height (30 for VGA)
- * @param message - Optional message to display on the left
+ * You can call as:
+ *  - drawStatusBar("message")
+ *  - drawStatusBar(width, height, message)
  */
-export function drawStatusBar(width: number = 80, height: number = 30, message = ""): void {
-  moveCursor(height, 1);
-  
-  const time = new Date().toLocaleTimeString('en-US', { 
-    hour12: false, 
-    hour: '2-digit', 
-    minute: '2-digit' 
+export function drawStatusBar(widthOrMessage?: number | string, height?: number, message?: string): void {
+  // Support both legacy signature (width, height, message) and simplified (message)
+  // If first arg is a string, treat it as message and use SVGA defaults
+  let w: number;
+  let h: number;
+  let msg = "";
+  if (typeof widthOrMessage === "string") {
+    msg = widthOrMessage;
+    const size = getScreenSize();
+    w = size.width;
+    h = size.height;
+  } else {
+    const size = getScreenSize();
+    w = widthOrMessage ?? size.width;
+    h = height ?? size.height;
+    msg = message ?? "";
+  }
+
+  const time = new Date().toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
   });
-  
-  const leftText = message || " F1=Help  F10=Exit";
-  const rightText = ` VGA 640×480 │ ${time} `;
-  const padding = width - leftText.length - rightText.length;
-  
-  console.log(
+
+  const leftText = msg || " F1=Help  F10=Exit";
+  const rightText = ` SVGA 1280×1024 │ ${time} `;
+  const padding = w - leftText.length - rightText.length;
+
+  writeAt(h, 1,
     turboPascal.statusBar + turboPascal.statusText + colors.bright +
     leftText + " ".repeat(Math.max(0, padding)) + rightText + colors.reset
   );
@@ -527,8 +611,6 @@ export function drawMenuItemWithHotkey(
   const config = ConsoleConfig.getInstance();
   const icons = config.getIcons();
   
-  moveCursor(y, x);
-  
   // Parse text for hotkey (marked with ~)
   let displayText = "";
   let hotkeyIndex = -1;
@@ -544,7 +626,7 @@ export function drawMenuItemWithHotkey(
   
   if (isSelected) {
     const prefix = config.isAsciiMode() ? " > " : " " + icons.arrow + " ";
-    console.log(
+    writeAt(y, x,
       turboPascal.menuHighlight + turboPascal.highlightText + colors.bright +
       prefix + cleanText.padEnd(width - prefix.length) + colors.reset
     );
@@ -562,7 +644,7 @@ export function drawMenuItemWithHotkey(
       }
     }
     
-    console.log(output + " ".repeat(Math.max(0, width - prefix.length - cleanText.length)) + colors.reset);
+    writeAt(y, x, output + " ".repeat(Math.max(0, width - prefix.length - cleanText.length)) + colors.reset);
   }
 }
 
@@ -571,13 +653,13 @@ export function drawMenuItemWithHotkey(
  */
 export function displayTurboPascalBanner(): void {
   clearScreen();
-  
-  // Fill background with blue (VGA 80 columns × 30 rows)
-  for (let i = 1; i <= 30; i++) {
-    moveCursor(i, 1);
-    console.log(turboPascal.background + " ".repeat(80) + colors.reset);
+  const { width, height } = getScreenSize();
+
+  // Fill background with blue to full SVGA text grid
+  for (let i = 1; i <= height; i++) {
+    writeAt(i, 1, turboPascal.background + " ".repeat(width) + colors.reset);
   }
-  
+
   const config = ConsoleConfig.getInstance();
   // Compact banner for VGA 80×30 display
   const banner = config.isAsciiMode() ? 
@@ -588,7 +670,7 @@ export function displayTurboPascalBanner(): void {
       "      #   #   #     #   #    #      #   # #  #     #  #",
       "  #####   #   ##### #   #    #     ###  # #  ##### #   #",
       "",
-      "          ═══[ Version 1.0 - VGA Mode ]═══",
+      "          ═══[ Version 1.0 - SVGA 1280×1024 ]═══",
     ] :
     [
       "  ███████╗████████╗███████╗ █████╗ ███╗   ███╗",
@@ -603,12 +685,63 @@ export function displayTurboPascalBanner(): void {
       "  ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗",
       "  ██║     ██║██╔╝ ██╗███████╗██║  ██║",
       "",
-      "       ═══[ VGA 640×480 Edition ]═══",
+      "       ═══[ SVGA 1280×1024 Edition ]═══",
     ];
   
   let row = 3;
   for (const line of banner) {
-    moveCursor(row++, Math.floor((80 - line.length) / 2) + 1);
-    console.log(turboPascal.background + turboPascal.text + colors.bright + line + colors.reset);
+    writeAt(row++, Math.floor((width - line.length) / 2) + 1,
+      turboPascal.background + turboPascal.text + colors.bright + line + colors.reset
+    );
+  }
+}
+
+/**
+ * Draws a Turbo Pascal style top menu bar with highlight on the selected index
+ * @param titles - Array of top-level menu titles
+ * @param selectedIndex - The index of the currently selected top-level menu
+ */
+export function drawMenuBar(titles: string[], selectedIndex: number): void {
+  const { width } = getScreenSize();
+  // Menu bar background across the full width
+  writeAt(1, 1, turboPascal.menuBar + " ".repeat(width) + colors.reset);
+
+  // Layout titles with a space between
+  let x = 2;
+  for (let i = 0; i < titles.length; i++) {
+    const title = titles[i];
+    if (i === selectedIndex) {
+      writeAt(1, x,
+        turboPascal.menuHighlight + turboPascal.highlightText + colors.bright +
+        ` ${title} ` + colors.reset
+      );
+      x += title.length + 3; // account for spaces around title
+    } else {
+      writeAt(1, x, turboPascal.menuBar + turboPascal.menuText + ` ${title} ` + colors.reset);
+      x += title.length + 3;
+    }
+    x += 1; // gap
+  }
+}
+
+/**
+ * Draws a pulldown menu window with shadow and items, highlighting selection
+ * @param x - Left column of the pulldown window
+ * @param y - Top row of the pulldown window
+ * @param width - Window width
+ * @param items - Array of item labels (supporting ~hotkey~ underline markers)
+ * @param selectedIndex - Highlighted item index
+ */
+export function drawPulldownMenu(
+  x: number,
+  y: number,
+  width: number,
+  items: string[],
+  selectedIndex: number,
+): void {
+  const height = items.length + 2;
+  drawBoxWithShadow(x, y, width, height);
+  for (let i = 0; i < items.length; i++) {
+    drawMenuItemWithHotkey(items[i], x + 2, y + 1 + i, i === selectedIndex, width - 4);
   }
 }

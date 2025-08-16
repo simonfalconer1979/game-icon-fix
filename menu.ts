@@ -9,20 +9,24 @@ import {
   centerText,
   clearScreen,
   colors,
-  displayBanner,
   displayTurboPascalBanner,
   drawBox,
   drawBoxWithShadow,
+  drawStatusBar,
   drawDivider,
   drawMenuItem,
   drawMenuItemWithHotkey,
-  drawStatusBar,
-  drawTextWithShadow,
+  drawMenuBar,
+  drawPulldownMenu,
+  getCenteredPosition,
   hideCursor,
   moveCursor,
   showCursor,
   showStatus,
+  showCenteredStatus,
   turboPascal,
+  write,
+  writeAt,
 } from "./ui.ts";
 
 /**
@@ -80,11 +84,10 @@ export class Menu {
     drawBoxWithShadow(this.x, this.y, this.width, height);
 
     // Draw title bar with Turbo Pascal menu bar color
-    moveCursor(this.y, this.x);
-    console.log(
+    writeAt(this.y, this.x,
       turboPascal.menuBar + turboPascal.menuText + colors.bright +
-        centerText(` ═══[ ${this.title} ]═══ `, this.width) +
-        colors.reset,
+      centerText(` ═══[ ${this.title} ]═══ `, this.width) +
+      colors.reset
     );
 
     // Draw menu items with hotkey support
@@ -99,11 +102,10 @@ export class Menu {
     });
 
     // Draw F-key shortcuts at bottom
-    moveCursor(this.y + height - 2, this.x + 2);
-    console.log(
+    writeAt(this.y + height - 2, this.x + 2,
       turboPascal.windowBg + colors.fg.white + colors.dim +
-        centerText("↑↓ Navigate │ Enter=Select │ ESC=Back", this.width - 4) +
-        colors.reset,
+      centerText("↑↓ Navigate │ Enter=Select │ ESC=Back", this.width - 4) +
+      colors.reset
     );
   }
 
@@ -128,16 +130,10 @@ export class Menu {
         case "down":
           this.selectedIndex = (this.selectedIndex + 1) % this.items.length;
           break;
-        case "enter": {
-          const selected = this.items[this.selectedIndex];
-          if (selected.action) {
-            showCursor();
-            await selected.action();
-            hideCursor();
-          }
-          this.isActive = false;
-          return selected.id;
-        }
+        case "enter":
+          showCursor();
+          return this.items[this.selectedIndex].id;
+          break;
         case "escape":
           beep(); // Classic DOS beep on ESC
           this.isActive = false;
@@ -163,22 +159,36 @@ export class Menu {
    */
   private async getKeypress(): Promise<string> {
     // Set raw mode for single keypress reading
-    Deno.stdin.setRaw(true);
+    try {
+      Deno.stdin.setRaw(true);
+    } catch (error) {
+      // If setRaw fails (Windows issue), try to continue without it
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Warning: Could not set raw mode:", errorMessage);
+    }
 
-    const buffer = new Uint8Array(3);
+    const buffer = new Uint8Array(10);
     let n: number | null;
 
     try {
       n = await Deno.stdin.read(buffer);
     } catch (error) {
-      Deno.stdin.setRaw(false);
+      try {
+        Deno.stdin.setRaw(false);
+      } catch {
+        // Ignore setRaw errors on cleanup
+      }
       const errorMessage = error instanceof Error
         ? error.message
         : "Unknown error";
       throw new Error(`Failed to read keyboard input: ${errorMessage}`);
     }
 
-    Deno.stdin.setRaw(false);
+    try {
+      Deno.stdin.setRaw(false);
+    } catch {
+      // Ignore setRaw errors
+    }
 
     if (n === null || n === 0) return "";
 
@@ -226,11 +236,11 @@ export class Menu {
  * Displays the main menu screen
  * @returns The selected menu item ID or null
  */
-export async function showMainMenu(): Promise<string | null> {
+export async function showTopMenu(): Promise<string | null> {
   displayTurboPascalBanner();
 
-  // Draw status bar at VGA bottom (row 30)
-  drawStatusBar(80, 30, " F1=Help  F10=Exit");
+  // Draw status bar at SVGA bottom
+  drawStatusBar(" F1=Help  F10=Exit");
 
   const menuItems: MenuItem[] = [
     {
@@ -263,8 +273,11 @@ export async function showMainMenu(): Promise<string | null> {
     },
   ];
 
-  // Center menu on VGA screen (80×30)
-  const menu = new Menu("MAIN MENU", menuItems, 15, 16, 50);
+  // Center menu on SVGA screen (160×64)
+  const width = 50;
+  const height = menuItems.length + 6;
+  const { x, y } = getCenteredPosition(width, height);
+  const menu = new Menu("MAIN MENU", menuItems, x, y, width);
   const result = await menu.show();
   
   // Handle F-key shortcuts
@@ -280,7 +293,7 @@ export async function showMainMenu(): Promise<string | null> {
  */
 export async function showSettingsMenu(): Promise<void> {
   displayTurboPascalBanner();
-  drawStatusBar(80, 30, " F1=Help  ESC=Back");
+  drawStatusBar(" F1=Help  ESC=Back");
 
   const settingsItems: MenuItem[] = [
     {
@@ -288,7 +301,7 @@ export async function showSettingsMenu(): Promise<void> {
       label: "~C~onfigure Steam Path",
       action: async () => {
         beep();
-        showStatus("info", "Steam path configuration coming soon!", 15, 25);
+        showCenteredStatus("info", "Steam path configuration coming soon!");
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
@@ -296,7 +309,7 @@ export async function showSettingsMenu(): Promise<void> {
       id: "backup",
       label: "Enable Icon ~B~ackup",
       action: async () => {
-        showStatus("success", "Backup enabled!", 15, 25);
+        showCenteredStatus("success", "Backup enabled!");
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
@@ -304,7 +317,7 @@ export async function showSettingsMenu(): Promise<void> {
       id: "parallel",
       label: "~P~arallel Downloads: ON",
       action: async () => {
-        showStatus("success", "Parallel downloads toggled!", 15, 25);
+        showCenteredStatus("success", "Parallel downloads toggled!");
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
@@ -312,7 +325,7 @@ export async function showSettingsMenu(): Promise<void> {
       id: "cache",
       label: "Clear Icon Cac~h~e",
       action: async () => {
-        showStatus("warning", "Cache cleared!", 15, 25);
+        showCenteredStatus("warning", "Cache cleared!");
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
@@ -322,8 +335,11 @@ export async function showSettingsMenu(): Promise<void> {
     },
   ];
 
-  // Center menu on VGA screen
-  const menu = new Menu("SETTINGS", settingsItems, 15, 16, 50);
+  // Center menu on SVGA screen
+  const width = 50;
+  const height = settingsItems.length + 6;
+  const { x, y } = getCenteredPosition(width, height);
+  const menu = new Menu("SETTINGS", settingsItems, x, y, width);
   const choice = await menu.show();
   
   // Handle settings choices

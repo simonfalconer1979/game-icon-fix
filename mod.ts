@@ -3,8 +3,8 @@
  * Orchestrates the menu system and processing workflows
  */
 
-import { extname, join } from "jsr:@std/path@1.0.9";
-import { showMainMenu, showSettingsMenu } from "./menu.ts";
+import { extname, join } from "@std/path";
+import { showSettingsMenu, showTopMenu } from "./menu.ts";
 import { PathBrowser } from "./browser.ts";
 import { IconProcessor } from "./processor.ts";
 import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
@@ -14,14 +14,16 @@ import {
   centerText,
   clearScreen,
   colors,
-  displayBanner,
   displayTurboPascalBanner,
   drawBox,
   drawBoxWithShadow,
+  drawCenteredBoxWithShadow,
   drawStatusBar,
   moveCursor,
   showCursor,
   turboPascal,
+  write,
+  writeAt,
 } from "./ui.ts";
 import { ConsoleConfig } from "./console_utils.ts";
 import { setupFixedConsole } from "./fixed_console.ts";
@@ -34,24 +36,25 @@ import { setupFixedConsole } from "./fixed_console.ts";
  */
 async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
   displayTurboPascalBanner();
-  drawStatusBar(105, 50, " Detecting Steam Installation...");
+  drawStatusBar(" Detecting Steam Installation...");
 
   const config = ConsoleConfig.getInstance();
   const icons = config.getIcons();
   
-  drawBoxWithShadow(25, 28, 55, 12);
-  moveCursor(30, 27);
-  console.log(
+  const dlg = drawCenteredBoxWithShadow(55, 12);
+  const innerX = dlg.x + 2;
+  let line = dlg.y + 2;
+  writeAt(line, innerX,
     turboPascal.windowBg + turboPascal.text + icons.search + " Searching for Steam installation..." +
-      colors.reset,
+    colors.reset
   );
 
   let steamInfo: SteamInfo | null = null;
 
   if (customPath) {
-    moveCursor(34, 17);
-    console.log(
-      colors.fg.cyan + `Checking custom path: ${customPath}...`.padEnd(50) + colors.reset,
+    line = dlg.y + 4;
+    writeAt(line, innerX,
+      colors.fg.cyan + `Checking custom path: ${customPath}...`.padEnd(50) + colors.reset
     );
     
     // Try custom path
@@ -73,9 +76,9 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
       throw new Error(`Invalid Steam path: ${customPath}`);
     }
   } else {
-    moveCursor(21, 17);
-    console.log(
-      turboPascal.windowBg + colors.fg.cyan + "Auto-detecting Steam..." + colors.reset,
+    line = dlg.y + 3;
+    writeAt(line, innerX,
+      turboPascal.windowBg + colors.fg.cyan + "Auto-detecting Steam..." + colors.reset
     );
     
     // Use automatic detection
@@ -86,28 +89,28 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
     throw new Error("Steam installation not found");
   }
 
-  moveCursor(34, 27);
-  console.log(turboPascal.windowBg + colors.fg.brightGreen + icons.success + ` Found Steam at: ${steamInfo.installPath}` + colors.reset);
+  line = dlg.y + 6;
+  writeAt(line, innerX,
+    turboPascal.windowBg + colors.fg.brightGreen + icons.success + ` Found Steam at: ${steamInfo.installPath}` + colors.reset
+  );
   
   if (steamInfo.libraries.length > 1) {
-    moveCursor(37, 17);
-    console.log(
-      colors.fg.green + icons.folder + ` Found ${steamInfo.libraries.length} Steam libraries` + colors.reset,
+    line = dlg.y + 7;
+    writeAt(line, innerX,
+      colors.fg.green + icons.folder + ` Found ${steamInfo.libraries.length} Steam libraries` + colors.reset
     );
     
     // Show library paths
-    let line = 38;
+    line = dlg.y + 8;
     for (const lib of steamInfo.libraries.slice(0, 3)) {
-      moveCursor(line++, 19);
-      console.log(
-        colors.fg.white + `${icons.bullet} ${lib.path.substring(0, 48)}` + colors.reset,
+      writeAt(line++, innerX + 2,
+        colors.fg.white + `${icons.bullet} ${lib.path.substring(0, 48)}` + colors.reset
       );
     }
     
     if (steamInfo.libraries.length > 3) {
-      moveCursor(line, 19);
-      console.log(
-        colors.fg.gray + `  ... and ${steamInfo.libraries.length - 3} more` + colors.reset,
+      writeAt(line, innerX + 2,
+        colors.fg.gray + `  ... and ${steamInfo.libraries.length - 3} more` + colors.reset
       );
     }
   }
@@ -159,28 +162,31 @@ async function processCurrentDirectory(steamInfo: SteamInfo, iconResolver: Steam
 
   if (files.length === 0) {
     displayTurboPascalBanner();
-    drawStatusBar(105, 50, " No Files Found");
+    drawStatusBar(" No Files Found");
 
-    drawBoxWithShadow(25, 28, 55, 8);
-    moveCursor(30, 27);
-    console.log(
+    const errDlg = drawCenteredBoxWithShadow(55, 8);
+    const errInnerX = errDlg.x + 2;
+    writeAt(errDlg.y + 2, errInnerX,
       turboPascal.errorBg + turboPascal.errorText + centerText("No Steam shortcuts found!", 51) +
-        colors.reset,
+      colors.reset
     );
-    moveCursor(31, 27);
-    console.log(
-      turboPascal.windowBg + turboPascal.textDim + centerText(`Searched in: ${cwd}`, 51) + colors.reset,
+    writeAt(errDlg.y + 3, errInnerX,
+      turboPascal.windowBg + turboPascal.textDim + centerText(`Searched in: ${cwd}`, 51) + colors.reset
     );
 
     beep(); // DOS beep for error
-    moveCursor(34, 30);
-    console.log(
-      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset,
+    writeAt(errDlg.y + 5, errInnerX,
+      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset
     );
 
-    Deno.stdin.setRaw(true);
-    await Deno.stdin.read(new Uint8Array(1));
-    Deno.stdin.setRaw(false);
+    try {
+      Deno.stdin.setRaw(true);
+      await Deno.stdin.read(new Uint8Array(1));
+      Deno.stdin.setRaw(false);
+    } catch {
+      // Fallback for Windows where setRaw might fail
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
     return;
   }
 
@@ -204,24 +210,28 @@ async function processDesktop(steamInfo: SteamInfo, iconResolver: SteamIconResol
 
   if (files.length === 0) {
     displayTurboPascalBanner();
-    drawStatusBar(105, 50, " No Files Found");
+    drawStatusBar(" No Files Found");
 
-    drawBoxWithShadow(25, 28, 55, 8);
-    moveCursor(30, 27);
-    console.log(
+    const errDlg = drawCenteredBoxWithShadow(55, 8);
+    const errInnerX = errDlg.x + 2;
+    writeAt(errDlg.y + 2, errInnerX,
       turboPascal.errorBg + turboPascal.errorText +
-        centerText("No Steam shortcuts found on Desktop!", 51) + colors.reset,
+      centerText("No Steam shortcuts found on Desktop!", 51) + colors.reset
     );
 
     beep(); // DOS beep for error
-    moveCursor(33, 30);
-    console.log(
-      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset,
+    writeAt(errDlg.y + 4, errInnerX,
+      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset
     );
 
-    Deno.stdin.setRaw(true);
-    await Deno.stdin.read(new Uint8Array(1));
-    Deno.stdin.setRaw(false);
+    try {
+      Deno.stdin.setRaw(true);
+      await Deno.stdin.read(new Uint8Array(1));
+      Deno.stdin.setRaw(false);
+    } catch {
+      // Fallback for Windows where setRaw might fail
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
     return;
   }
 
@@ -235,7 +245,7 @@ async function processDesktop(steamInfo: SteamInfo, iconResolver: SteamIconResol
 export async function main(): Promise<void> {
   // Setup fixed console window (Windows only)
   if (Deno.build.os === "windows") {
-    await setupFixedConsole(80, 30, "Steam Icon Fixer v1.0 - VGA Mode");
+    await setupFixedConsole(160, 64, "Steam Icon Fixer v1.0 - SVGA Mode");
   }
 
   // Initialize console configuration for proper character display
@@ -254,40 +264,54 @@ export async function main(): Promise<void> {
     
     // Load installed games for better icon resolution
     clearScreen();
-    displayBanner();
-    drawBox(15, 30, 55, 6, colors.fg.cyan);
+    displayTurboPascalBanner();
+    const loadDlg = drawCenteredBoxWithShadow(55, 6, colors.fg.cyan);
     const config = ConsoleConfig.getInstance();
     const icons = config.getIcons();
-    moveCursor(32, 17);
-    console.log(
-      colors.fg.brightCyan + icons.game + " Loading installed games..." + colors.reset,
+    writeAt(loadDlg.y + 2, loadDlg.x + 2,
+      colors.fg.brightCyan + icons.game + " Loading installed games..." + colors.reset
     );
     
     const installedGames = await SteamDetector.getInstalledGames(steamInfo);
     const iconResolver = new SteamIconResolver(steamInfo, installedGames);
     
-    moveCursor(34, 17);
-    console.log(
-      colors.fg.green + icons.success + ` Found ${installedGames.size} installed games` + colors.reset,
+    writeAt(loadDlg.y + 3, loadDlg.x + 2,
+      colors.fg.green + icons.success + ` Found ${installedGames.size} installed games` + colors.reset
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     while (true) {
-      const choice = await showMainMenu();
+      const cmd = await showTopMenu();
+      if (!cmd) continue;
 
-      switch (choice) {
-        case "fix-current":
+      // Normalize legacy ids if any appear
+      if (cmd === "file:exit" || cmd === "exit") {
+        clearScreen();
+        showCursor();
+        write(colors.fg.cyan + "\nThanks for using Steam Icon Fixer!\n" + colors.reset);
+        const heartIcon = config.isAsciiMode() ? "<3" : "♥";
+        write(
+          colors.fg.gray + "Made with " + colors.fg.red + heartIcon +
+          colors.fg.gray + " in retro style\n\n" + colors.reset
+        );
+        Deno.exit(0);
+      }
+
+      switch (cmd) {
+        case "actions:fix-current":
+        case "fix-current": {
           await processCurrentDirectory(steamInfo, iconResolver);
           break;
-
-        case "fix-desktop":
+        }
+        case "actions:fix-desktop":
+        case "fix-desktop": {
           await processDesktop(steamInfo, iconResolver);
           break;
-
+        }
+        case "actions:browse":
         case "browse": {
           const browser = new PathBrowser(Deno.cwd());
           const selected = await browser.browse();
-
           if (selected && selected.length > 0) {
             const files: string[] = [];
             for (const selectedPath of selected) {
@@ -298,7 +322,6 @@ export async function main(): Promise<void> {
                 files.push(selectedPath);
               }
             }
-
             if (files.length > 0) {
               const processor = new IconProcessor(steamInfo, iconResolver);
               await processor.processFiles(files);
@@ -306,59 +329,60 @@ export async function main(): Promise<void> {
           }
           break;
         }
-
+        case "actions:replace-all":
+        case "refresh-all": {
+          const manager = new ShortcutManager(steamInfo);
+          await manager.refreshAllShortcuts();
+          break;
+        }
+        case "file:settings":
+        case "actions:settings":
+        case "settings": {
+          await showSettingsMenu();
+          break;
+        }
         case "select-files": {
           const browser = new PathBrowser(Deno.cwd(), true);
           const selected = await browser.browse();
-
           if (selected && selected.length > 0) {
             const processor = new IconProcessor(steamInfo, iconResolver);
             await processor.processFiles(selected);
           }
           break;
         }
-
-        case "refresh-all": {
-          const manager = new ShortcutManager(steamInfo);
-          await manager.refreshAllShortcuts();
+        default: {
+          // Non-routed commands (view/help/about) can show a simple dialog for now
+          displayTurboPascalBanner();
+          const infoDlg = drawCenteredBoxWithShadow(50, 8);
+          writeAt(infoDlg.y + 2, infoDlg.x + 2,
+            turboPascal.windowBg + turboPascal.text + `Command: ${cmd}` + colors.reset
+          );
+          writeAt(infoDlg.y + 4, infoDlg.x + 2,
+            turboPascal.windowBg + colors.fg.gray + "Press any key to continue..." + colors.reset
+          );
+          try {
+            Deno.stdin.setRaw(true);
+            await Deno.stdin.read(new Uint8Array(1));
+            Deno.stdin.setRaw(false);
+          } catch {
+            // Fallback for Windows where setRaw might fail
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
           break;
         }
-
-        case "settings":
-          await showSettingsMenu();
-          break;
-
-        case "exit": {
-          clearScreen();
-          showCursor();
-          console.log(
-            colors.fg.cyan + "\nThanks for using Steam Icon Fixer!" +
-              colors.reset,
-          );
-          const heartIcon = config.isAsciiMode() ? "<3" : "♥";
-          console.log(
-            colors.fg.gray + "Made with " + colors.fg.red + heartIcon +
-              colors.fg.gray + " in retro style\n" + colors.reset,
-          );
-          Deno.exit(0);
-          break;
-        }
-
-        default:
-          break;
       }
     }
   } catch (error) {
     clearScreen();
     showCursor();
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(colors.fg.red + "Error: " + errorMessage + colors.reset);
+    write(colors.fg.red + "Error: " + errorMessage + colors.reset + "\n");
 
     if (errorMessage.includes("Steam")) {
-      console.log(
+      write(
         colors.fg.yellow +
-          "\nTip: Steam installation will be detected automatically" +
-          colors.reset,
+        "\nTip: Steam installation will be detected automatically\n" +
+        colors.reset
       );
     }
 
@@ -375,9 +399,7 @@ if (Deno.build.os !== "windows") {
     Deno.addSignalListener("SIGINT", () => {
       clearScreen();
       showCursor();
-      console.log(
-        colors.fg.cyan + "\n\nExiting Steam Icon Fixer..." + colors.reset,
-      );
+      write(colors.fg.cyan + "\n\nExiting Steam Icon Fixer...\n" + colors.reset);
       Deno.exit(0);
     });
   } catch {
