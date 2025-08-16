@@ -4,7 +4,7 @@
  */
 
 import { UIManager } from "./ui_manager.ts";
-import { ConsoleConfig, type BoxChars, type IconChars } from "./console_utils.ts";
+import { ConsoleConfig } from "./console_utils.ts";
 
 // ANSI color codes for retro terminal styling
 export const colors = {
@@ -165,68 +165,63 @@ export function centerText(text: string, width: number): string {
  */
 export function displayBanner(): void {
   const config = ConsoleConfig.getInstance();
-  const box = config.getBox();
   
   // Create dynamic banner with appropriate characters
   const banner = config.isAsciiMode() ? 
     // ASCII version
     [
-      "+" + "=".repeat(65) + "+",
-      "|                                                               |",
-      "|    SSSSS TTTTT EEEEE  AAA  M   M                             |",
-      "|   S        T   E     A   A MM MM                             |",
-      "|    SSS     T   EEE   AAAAA M M M                             |",
-      "|       S    T   E     A   A M   M                             |",
-      "|   SSSSS    T   EEEEE A   A M   M                             |",
-      "|                                                               |",
-      "|            III  CCC   OOO  N   N                             |",
-      "|             I  C   C O   O NN  N                             |",
-      "|             I  C     O   O N N N                             |",
-      "|             I  C   C O   O N  NN                             |",
-      "|            III  CCC   OOO  N   N                             |",
-      "|                                                               |",
-      "|               FFFFF III X   X EEEEE RRRR                     |",
-      "|               F      I   X X  E     R   R                    |",
-      "|               FFF    I    X   EEE   RRRR                     |",
-      "|               F      I   X X  E     R  R                     |",
-      "|               F     III X   X EEEEE R   R                    |",
-      "|                                                               |",
-      "|                        Version 3.1                           |",
-      "|                                                               |",
-      "+" + "=".repeat(65) + "+",
+      "",
+      "   GGGGG   AAA  M   M EEEEE",
+      "  G       A   A MM MM E    ",
+      "  G  GGG  AAAAA M M M EEE  ",
+      "  G    G  A   A M   M E    ",
+      "   GGGGG  A   A M   M EEEEE",
+      "",
+      "  III  CCC   OOO  N   N",
+      "   I  C   C O   O NN  N",
+      "   I  C     O   O N N N",
+      "   I  C   C O   O N  NN",
+      "  III  CCC   OOO  N   N",
+      "",
+      "  FFFFF III X   X EEEEE RRRR ",
+      "  F      I   X X  E     R   R",
+      "  FFF    I    X   EEE   RRRR ",
+      "  F      I   X X  E     R  R ",
+      "  F     III X   X EEEEE R   R",
+      "",
+      "          Version 1.0",
     ] :
-    // UTF-8 version with fixed alignment
+    // UTF-8 version
     [
-      "╔═════════════════════════════════════════════════════════════════╗",
-      "║                                                                 ║",
-      "║   ███████╗████████╗███████╗ █████╗ ███╗   ███╗                 ║",
-      "║   ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║                 ║",
-      "║   ███████╗   ██║   █████╗  ███████║██╔████╔██║                 ║",
-      "║   ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║                 ║",
-      "║   ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║                 ║",
-      "║   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝                 ║",
-      "║                                                                 ║",
-      "║            ██╗ ██████╗ ██████╗ ███╗   ██╗                      ║",
-      "║            ██║██╔════╝██╔═══██╗████╗  ██║                      ║",
-      "║            ██║██║     ██║   ██║██╔██╗ ██║                      ║",
-      "║            ██║██║     ██║   ██║██║╚██╗██║                      ║",
-      "║            ██║╚██████╗╚██████╔╝██║ ╚████║                      ║",
-      "║            ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝                      ║",
-      "║                                                                 ║",
-      "║               ███████╗██╗██╗  ██╗███████╗██████╗               ║",
-      "║               ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗              ║",
-      "║               █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝              ║",
-      "║               ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗              ║",
-      "║               ██║     ██║██╔╝ ██╗███████╗██║  ██║              ║",
-      "║               ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝              ║",
-      "║                                                                 ║",
-      "╚═════════════════════════════════════════════════════════════════╝",
+      "",
+      "   ██████╗  █████╗ ███╗   ███╗███████╗",
+      "  ██╔════╝ ██╔══██╗████╗ ████║██╔════╝",
+      "  ██║  ███╗███████║██╔████╔██║█████╗  ",
+      "  ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝  ",
+      "  ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗",
+      "   ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝",
+      "",
+      "  ██╗ ██████╗ ██████╗ ███╗   ██╗",
+      "  ██║██╔════╝██╔═══██╗████╗  ██║",
+      "  ██║██║     ██║   ██║██╔██╗ ██║",
+      "  ██║██║     ██║   ██║██║╚██╗██║",
+      "  ██║╚██████╗╚██████╔╝██║ ╚████║",
+      "  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝",
+      "",
+      "  ███████╗██╗██╗  ██╗███████╗██████╗ ",
+      "  ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗",
+      "  █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝",
+      "  ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗",
+      "  ██║     ██║██╔╝ ██╗███████╗██║  ██║",
+      "  ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝",
+      "",
+      "             Version 1.0",
     ];
 
   clearScreen();
   let row = 2;
   for (const line of banner) {
-    moveCursor(row++, 5);
+    moveCursor(row++, 20);
     console.log(colors.fg.cyan + colors.bright + line + colors.reset);
   }
 }

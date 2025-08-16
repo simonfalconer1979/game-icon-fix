@@ -215,7 +215,7 @@ export class SettingsManager {
   /**
    * Get status text
    */
-  getStatusText(type: "success" | "error" | "warning" | "info", symbol: string, text: string): string {
+  getStatusText(_type: "success" | "error" | "warning" | "info", symbol: string, text: string): string {
     return `${symbol} ${text}`;
   }
 

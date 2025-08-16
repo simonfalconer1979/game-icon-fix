@@ -67,18 +67,11 @@ export class UIManager {
   }
 
   /**
-   * Clear screen with accessibility considerations
+   * Clear screen
    */
   clearScreen(): void {
-    const settings = this.settings.getSettings();
-    
-    if (settings.accessibility.noAnimations) {
-      // Simple clear without animation
-      console.clear();
-    } else {
-      // Standard clear with cursor reset
-      Deno.stdout.writeSync(new TextEncoder().encode("\x1b[2J\x1b[H"));
-    }
+    // Standard clear with cursor reset
+    Deno.stdout.writeSync(new TextEncoder().encode("\x1b[2J\x1b[H"));
   }
 
   /**
@@ -162,9 +155,6 @@ export class UIManager {
     // Show options
     console.log(colorScheme + "  Press [Y] to confirm, [N] to cancel" + colors.reset);
     
-    if (settings.accessibility.verboseMode) {
-      console.log(colors.dim + "  [CONFIRMATION REQUIRED] " + colors.reset);
-    }
     
     // Read user input
     Deno.stdin.setRaw(true);
@@ -227,7 +217,6 @@ export class UIManager {
     message: string,
     icon?: string
   ): void {
-    const settings = this.settings.getSettings();
     const color = this.settings.getColor(type);
     const defaultIcons = {
       success: "✓",
@@ -241,10 +230,6 @@ export class UIManager {
     
     console.log(color + text + colors.reset);
     
-    // Sound feedback if enabled
-    if (settings.accessibility.soundFeedback) {
-      this.playSound(type);
-    }
   }
 
   /**
@@ -264,10 +249,6 @@ export class UIManager {
   debounceAnimation(id: string, callback: () => void, delay?: number): void {
     const settings = this.settings.getSettings();
     
-    if (settings.accessibility.noAnimations) {
-      // Skip animations in accessibility mode
-      return;
-    }
     
     const actualDelay = delay || settings.performance.debounceDelay;
     
@@ -309,14 +290,7 @@ export class UIManager {
    * Show progress with accessibility support
    */
   showProgress(current: number, total: number, label = ""): void {
-    const settings = this.settings.getSettings();
     
-    if (settings.accessibility.noAnimations) {
-      // Simple text progress
-      const percent = Math.round((current / total) * 100);
-      console.log(`Progress: ${current}/${total} (${percent}%) ${label}`);
-      return;
-    }
     
     // Visual progress bar
     const width = 40;
@@ -341,13 +315,7 @@ export class UIManager {
   private spinnerChars = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"];
   
   showSpinner(label: string): void {
-    const settings = this.settings.getSettings();
     
-    if (settings.accessibility.noAnimations) {
-      // Static loading indicator
-      console.log(`[LOADING] ${label}`);
-      return;
-    }
     
     const spinner = this.spinnerChars[this.spinnerIndex];
     this.spinnerIndex = (this.spinnerIndex + 1) % this.spinnerChars.length;
@@ -387,9 +355,6 @@ export class UIManager {
     }
     
     const items = commands.map(cmd => {
-      if (settings.accessibility.verboseMode) {
-        return `[KEY: ${cmd.key}] ${cmd.description}`;
-      }
       return `${cmd.key} ${cmd.description}`;
     });
     

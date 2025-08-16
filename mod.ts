@@ -321,7 +321,7 @@ export async function main(): Promise<void> {
           await showSettingsMenu();
           break;
 
-        case "exit":
+        case "exit": {
           clearScreen();
           showCursor();
           console.log(
@@ -335,6 +335,7 @@ export async function main(): Promise<void> {
           );
           Deno.exit(0);
           break;
+        }
 
         default:
           break;

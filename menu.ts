@@ -3,7 +3,7 @@
  * Provides keyboard-controlled menu interface with retro styling
  */
 
-import { AppSettings, SettingsManager } from "./settings.ts";
+// Removed unused imports - AppSettings and SettingsManager were not used in this file
 import {
   centerText,
   clearScreen,
