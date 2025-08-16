@@ -6,7 +6,7 @@ title Steam Icon Fixer - Launcher
 :: Steam Icon Fixer - Enhanced Launcher
 :: Provides multiple modes for running the Steam Icon Fixer
 :: Author: @mrsimb
-:: Version: 3.1.0
+:: Version: 1.0.0
 
 :: Check if Deno is installed
 where deno >nul 2>nul
@@ -36,7 +36,7 @@ color 0B
 echo.
 echo   +===============================================================+
 echo   ^|                                                               ^|
-echo   ^|                    STEAM ICON FIXER 3.1                      ^|
+echo   ^|                    STEAM ICON FIXER 1.0                      ^|
 echo   ^|                 Enhanced Multi-Library Support                ^|
 echo   ^|                                                               ^|
 echo   +===============================================================+

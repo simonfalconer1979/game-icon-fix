@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Steam Blank Icon Fixer - A Deno-based tool that fixes blank icons of Steam desktop shortcuts in Windows. Features both CLI and interactive retro ASCII-style UI modes.
+Steam Icon Fixer v1.0 - A Deno-based tool that fixes blank icons of Steam desktop shortcuts in Windows. Features both CLI and interactive retro ASCII-style UI modes with automatic Steam detection and multi-library support.
 
 ## Key Commands
 
@@ -38,12 +38,16 @@ deno check mod.ts mod_ui.ts
 - **mod.ts**: Main CLI module - handles command-line arguments and non-interactive processing
 - **mod_ui.ts**: UI module - launches interactive menu when no CLI args provided
 
-### Module Structure
-- **ui.ts**: Core terminal UI utilities (colors, cursor control, box drawing)
-- **menu.ts**: Menu system implementation
+### Core Modules
+- **ui.ts**: Terminal UI utilities (colors, cursor control, box drawing)
+- **ui_manager.ts**: Centralized cursor and display management
+- **menu.ts**: Menu system implementation with keyboard navigation
 - **browser.ts**: Interactive file/directory browser with multi-select
 - **processor.ts**: Icon downloading and processing logic
 - **steam_detector.ts**: Enhanced Steam detection with VDF parsing and multi-library support
+- **shortcut_manager.ts**: Steam shortcut creation and management
+- **settings.ts**: User preferences and accessibility settings
+- **console_utils.ts**: Console compatibility and ASCII fallback support
 
 ### Key Design Patterns
 1. **Dual Mode Operation**: Automatically switches between CLI and UI modes based on arguments
