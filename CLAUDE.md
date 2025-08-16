@@ -4,17 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Steam Icon Fixer v1.0 - A Deno-based tool that fixes blank icons of Steam desktop shortcuts in Windows. Features both CLI and interactive retro ASCII-style UI modes with automatic Steam detection and multi-library support.
+Steam Icon Fixer v1.0 - A Deno-based tool that fixes blank icons of Steam desktop shortcuts in Windows. Features an interactive retro ASCII-style UI with automatic Steam detection and multi-library support.
 
 ## Key Commands
 
 ### Development
 ```bash
-# Run in interactive UI mode (default)
+# Run interactive ASCII UI mode
 deno run -N -R -W --allow-run mod.ts
-
-# Run in CLI mode with arguments
-deno run -N -R -W --allow-run mod.ts [paths...]
 
 # Lint code
 deno lint
@@ -23,7 +20,7 @@ deno lint
 deno fmt
 
 # Type check
-deno check mod.ts mod_ui.ts
+deno check mod.ts
 ```
 
 ### Required Permissions
@@ -34,9 +31,8 @@ deno check mod.ts mod_ui.ts
 
 ## Architecture
 
-### Entry Points
-- **mod.ts**: Main CLI module - handles command-line arguments and non-interactive processing
-- **mod_ui.ts**: UI module - launches interactive menu when no CLI args provided
+### Entry Point
+- **mod.ts**: Main entry point - launches interactive ASCII UI with menu navigation
 
 ### Core Modules
 - **ui.ts**: Terminal UI utilities (colors, cursor control, box drawing)
@@ -46,11 +42,11 @@ deno check mod.ts mod_ui.ts
 - **processor.ts**: Icon downloading and processing logic
 - **steam_detector.ts**: Enhanced Steam detection with VDF parsing and multi-library support
 - **shortcut_manager.ts**: Steam shortcut creation and management
-- **settings.ts**: User preferences and accessibility settings
+- **settings.ts**: User preferences and display settings
 - **console_utils.ts**: Console compatibility and ASCII fallback support
 
 ### Key Design Patterns
-1. **Dual Mode Operation**: Automatically switches between CLI and UI modes based on arguments
+1. **Interactive UI Only**: Single-mode operation with ASCII-based menu interface
 2. **Enhanced Steam Detection**: 
    - Parses `libraryfolders.vdf` to find ALL Steam libraries across multiple drives
    - Reads app manifests (`appmanifest_*.acf`) to verify installed games

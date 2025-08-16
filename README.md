@@ -2,9 +2,9 @@
 
 [![Deno](https://img.shields.io/badge/deno-2.x-blue?logo=deno)](https://deno.land)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/simonfalconer1979/icon-fixer)
+[![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/simonfalconer1979/game-icon-fix)
 
-Fix blank Steam desktop shortcut icons with a single click. Features automatic Steam detection, multi-library support, and a beautiful retro ASCII interface.
+Fix blank Steam desktop shortcut icons with an interactive retro ASCII interface. Features automatic Steam detection, multi-library support, and beautiful terminal-based navigation.
 
 ## ✨ Features
 
@@ -14,25 +14,18 @@ Fix blank Steam desktop shortcut icons with a single click. Features automatic S
 - **⚡ Batch Processing** - Fix multiple shortcuts at once
 - **🔄 Smart Caching** - Skips already-fixed icons to save time
 - **🌐 CDN Fallbacks** - Multiple download sources for reliability
-- **♿ Accessibility** - Screen reader support and ASCII-only mode
 
 ## 🚀 Quick Start
 
 ### Option 1: Windows Batch File (Easiest)
 1. Download `steam-icon-fixer.bat`
 2. Double-click to run
-3. Choose from the interactive menu
+3. Navigate through the interactive ASCII menu
 
 ### Option 2: Command Line
 ```bash
-# Interactive UI mode
-deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer1979/icon-fixer/main/mod.ts
-
-# Fix desktop shortcuts
-deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer1979/icon-fixer/main/mod.ts "%USERPROFILE%\Desktop"
-
-# Fix current directory
-deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer1979/icon-fixer/main/mod.ts .
+# Launch interactive ASCII interface
+deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer1979/game-icon-fix/main/mod.ts
 ```
 
 ## 📋 Requirements
@@ -71,21 +64,14 @@ deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer197
 - `Space` - Toggle selection
 - `ESC` - Go back
 
-## 🔧 Command Line Options
+## 🎨 Interactive Features
 
-```bash
-# Specify custom Steam path
-deno run -N -R -W --allow-run mod.ts --steampath="D:/Steam" .
+- **Menu Navigation** - Use arrow keys to navigate through options
+- **File Browser** - Browse and select directories or specific files
+- **Batch Processing** - Process multiple shortcuts at once
+- **Settings Menu** - Configure display and performance options
+- **Real-time Feedback** - Visual progress indicators and status updates
 
-# Enable accessibility mode
-deno run -N -R -W --allow-run mod.ts --accessibility
-
-# Force ASCII-only mode (better compatibility)
-deno run -N -R -W --allow-run mod.ts --ascii
-
-# Refresh all desktop shortcuts
-deno run -N -R -W --allow-run mod.ts --refresh-all
-```
 
 ## 🛡️ Permissions
 
@@ -104,12 +90,13 @@ deno run -N -R -W --allow-run mod.ts --refresh-all
 3. Reboot your computer
 
 ### Garbled Characters?
-- Use `--ascii` flag for better compatibility
+- Enable ASCII mode in the Settings menu for better compatibility
 - Update to Windows Terminal for full Unicode support
 
 ### Steam Not Found?
-- Manually specify path: `--steampath="C:/Program Files (x86)/Steam"`
+- Steam path is detected automatically through registry and common locations
 - Ensure Steam is installed and has been run at least once
+- The app will guide you through Steam detection
 
 ## 📝 License
 

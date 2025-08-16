@@ -36,22 +36,18 @@ color 0B
 echo.
 echo   ╔═══════════════════════════════════════════════════════════════╗
 echo   ║                                                               ║
-echo   ║                    STEAM ICON FIXER 1.0                      ║
-echo   ║                 Fix Your Blank Steam Icons                    ║
+echo   ║                    GAME ICON FIXER 1.0                        ║
+echo   ║                 Fix Your Blank Game Icons                     ║
+echo   ║                  (c) Simon Falconer 2025                      ║
 echo   ║                                                               ║
 echo   ╚═══════════════════════════════════════════════════════════════╝
 echo.
 echo   Select an option:
 echo.
-echo   [1] Launch Steam Icon Fixer
-echo       • Fixed 85x50 character window
-echo       • Interactive menu system
-echo       • Auto-detects Steam installation
-echo       • Beautiful retro ASCII interface
-echo.
+echo   [1] Launch The Game Icon Fixer
 echo   [Q] Quit
 echo.
-echo   ═════════════════════════════════════════════════════════════════
+echo   ═══════════════════════════════════════════════════════════
 echo.
 set /p choice="   Enter your choice (1 or Q): "
 
@@ -71,13 +67,6 @@ echo   +===============================================================+
 echo   ^|                  Launching Interactive UI...                  ^|
 echo   +===============================================================+
 echo.
-echo   Features:
-echo   * Fixed-size non-resizable console window
-echo   * Automatic Steam detection across all libraries
-echo   * Directory browser with file selection
-echo   * Real-time progress tracking
-echo   * Color-coded status updates
-echo.
 echo   The application will open in a fixed 85x50 character window.
 echo   Starting...
 echo.
@@ -91,38 +80,6 @@ if %errorlevel% neq 0 (
 pause
 goto :show_menu
 
-:process_files
-:: Process files/folders passed as arguments (drag & drop support)
-cls
-color 0A
-echo.
-echo   +===============================================================+
-echo   ^|              Processing Dropped Files/Folders                 ^|
-echo   +===============================================================+
-echo.
-echo   Processing %* 
-echo.
-
-:: Build the command with all arguments
-set args=
-:build_args
-if "%~1"=="" goto :run_with_args
-set args=!args! "%~1"
-shift
-goto :build_args
-
-:run_with_args
-deno run -N -R -W -E --allow-run mod.ts !args!
-if %errorlevel% neq 0 (
-    color 0C
-    echo.
-    echo   Error: Failed to process the selected files/folders.
-    echo.
-)
-echo.
-pause
-exit /b
-
 :exit
 cls
 color 07
@@ -130,7 +87,7 @@ echo.
 echo   Thanks for using Steam Icon Fixer!
 echo   Made with ♥ by @simonfalconer1979
 echo.
-echo   GitHub: https://github.com/simonfalconer1979/icon-fixer
+echo   GitHub: https://github.com/simonfalconer1979/game-icon-fix
 echo.
 timeout /t 2 >nul
 exit /b 0

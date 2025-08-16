@@ -9,7 +9,9 @@
       "Bash(git add:*)",
       "Bash(rm:*)",
       "Bash(git push:*)",
-      "Bash(set STEAM_FIXER_ASCII=1)"
+      "Bash(set STEAM_FIXER_ASCII=1)",
+      "Bash(git remote set-url:*)",
+      "Bash(git remote add:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

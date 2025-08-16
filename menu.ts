@@ -3,7 +3,7 @@
  * Provides keyboard-controlled menu interface with retro styling
  */
 
-import { SettingsManager, type AccessibilitySettings } from "./settings.ts";
+import { AppSettings, SettingsManager } from "./settings.ts";
 import {
   centerText,
   clearScreen,
@@ -224,7 +224,7 @@ export async function showMainMenu(): Promise<string | null> {
     },
     {
       id: "refresh-all",
-      label: "Refresh ALL Desktop Shortcuts",
+      label: "Replace ALL Desktop Shortcuts",
     },
     {
       id: "settings",
@@ -292,179 +292,10 @@ export async function showSettingsMenu(): Promise<void> {
   
   // Handle settings choices
   switch (choice) {
-    case "accessibility":
-      await showAccessibilityMenu();
-      await showSettingsMenu(); // Return to settings
-      break;
     case "steam-path":
       // TODO: Implement
       break;
     case "back":
       return;
-  }
-}
-
-/**
- * Shows the accessibility settings menu
- */
-async function showAccessibilityMenu(): Promise<void> {
-  clearScreen();
-  displayBanner();
-  
-  const settings = SettingsManager.getInstance();
-  const current = settings.getSettings().accessibility;
-  
-  const items: MenuItem[] = [
-    {
-      id: "presets",
-      label: "Accessibility Presets →",
-    },
-    {
-      id: "animations",
-      label: `Animations: ${current.noAnimations ? "OFF" : "ON"}`,
-    },
-    {
-      id: "contrast",
-      label: `High Contrast: ${current.highContrast ? "ON" : "OFF"}`,
-    },
-    {
-      id: "verbose",
-      label: `Verbose Mode: ${current.verboseMode ? "ON" : "OFF"}`,
-    },
-    {
-      id: "text-size",
-      label: `Large Text: ${current.largeText ? "ON" : "OFF"}`,
-    },
-    {
-      id: "blinking",
-      label: `Blinking Text: ${current.noBlinking ? "OFF" : "ON"}`,
-    },
-    {
-      id: "ascii",
-      label: `Simple ASCII: ${current.simpleAscii ? "ON" : "OFF"}`,
-    },
-    {
-      id: "colors",
-      label: `Reduced Colors: ${current.reducedColors ? "ON" : "OFF"}`,
-    },
-    {
-      id: "back",
-      label: "← Back",
-    },
-  ];
-  
-  const menu = new Menu("ACCESSIBILITY", items);
-  const choice = await menu.show();
-  
-  const updates: AccessibilitySettings = { ...current };
-  
-  switch (choice) {
-    case "presets":
-      await showAccessibilityPresets();
-      break;
-    case "animations":
-      updates.noAnimations = !current.noAnimations;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "contrast":
-      updates.highContrast = !current.highContrast;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "verbose":
-      updates.verboseMode = !current.verboseMode;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "text-size":
-      updates.largeText = !current.largeText;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "blinking":
-      updates.noBlinking = !current.noBlinking;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "ascii":
-      updates.simpleAscii = !current.simpleAscii;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "colors":
-      updates.reducedColors = !current.reducedColors;
-      await settings.updateSettings({ accessibility: updates });
-      await showAccessibilityMenu();
-      break;
-    case "back":
-      return;
-  }
-}
-
-/**
- * Shows accessibility preset options
- */
-async function showAccessibilityPresets(): Promise<void> {
-  clearScreen();
-  displayBanner();
-  
-  const settings = SettingsManager.getInstance();
-  
-  const items: MenuItem[] = [
-    {
-      id: "full",
-      label: "Full Accessibility (All features enabled)",
-    },
-    {
-      id: "vision",
-      label: "Vision Support (High contrast, large text)",
-    },
-    {
-      id: "motion",
-      label: "Motion Sensitivity (No animations)",
-    },
-    {
-      id: "cognitive",
-      label: "Cognitive Support (Simple, clear)",
-    },
-    {
-      id: "reset",
-      label: "Reset to Defaults",
-    },
-    {
-      id: "back",
-      label: "← Back",
-    },
-  ];
-  
-  const menu = new Menu("ACCESSIBILITY PRESETS", items);
-  const choice = await menu.show();
-  
-  switch (choice) {
-    case "full":
-    case "vision":
-    case "motion":
-    case "cognitive":
-      await settings.enableAccessibilityPreset(choice as "full" | "vision" | "motion" | "cognitive");
-      console.log(colors.fg.green + `\n✓ ${choice.toUpperCase()} preset applied!` + colors.reset);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      break;
-    case "reset":
-      await settings.updateSettings({
-        accessibility: {
-          noAnimations: false,
-          highContrast: false,
-          verboseMode: false,
-          largeText: false,
-          noBlinking: false,
-          simpleAscii: false,
-          soundFeedback: false,
-          reducedColors: false,
-        }
-      });
-      console.log(colors.fg.green + "\n✓ Accessibility settings reset!" + colors.reset);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      break;
   }
 }

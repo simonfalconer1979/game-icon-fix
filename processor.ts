@@ -334,9 +334,7 @@ export class IconProcessor {
       let line = 0;
       for (const result of failedResults.slice(0, 7)) {
         moveCursor(41 + line, 12);
-        const errorText = this.settings.getSettings().accessibility.verboseMode
-          ? `[ERROR] ${basename(result.path)}: ${result.message}`
-          : `✗ ${basename(result.path).padEnd(30)} ${result.message}`;
+        const errorText = `✗ ${basename(result.path).padEnd(30)} ${result.message}`;
         console.log(
           colors.fg.red + errorText + colors.reset,
         );
