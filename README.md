@@ -7,6 +7,14 @@
 
 Fix blank desktop shortcut icons for your PC games with an interactive retro ASCII interface. Currently supports Steam games with automatic detection, multi-library support, and beautiful terminal-based navigation.
 
+## 🆕 Recent Updates
+
+- **SVGA Centering**: All dialogs and menus align to the 160×64 SVGA grid with true centering.
+- **Centered Helpers**: Added `getCenteredPosition()`, `drawCenteredBoxWithShadow()`, `showCenteredStatus()`, and `showStatusInBox()` in `ui.ts`.
+- **Centered Menus**: Main and Settings menus compute centered x,y based on content size.
+- **Centered Browser**: `PathBrowser` UI elements (title, path box, list, help, stats, scrollbar) render relative to a centered base.
+- **Turbo Pascal Padding**: Consistent inner padding and section spacing for authentic 1990s styling.
+
 ## ✨ Features
 
 ### Current Support (v1.0)
