@@ -521,15 +521,21 @@ export class SteamIconResolver {
    * @returns Array of CDN URLs to try
    */
   getIconUrls(appId: string, iconFileName: string): string[] {
+    // Since we don't have the icon hash, we'll use alternative endpoints
+    // that provide images we can convert to ICO format
     return [
-      // Primary CDN
-      `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/${appId}/${iconFileName}`,
-      // Akamai CDN (fallback)
-      `http://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${appId}/${iconFileName}`,
-      // Direct Steam CDN
-      `https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/${appId}/${iconFileName}`,
-      // Legacy URL format
-      `https://steamcommunity.com/public/images/apps/${appId}/${iconFileName}`,
+      // Library hero image (600x900) - best quality
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_hero.jpg`,
+      // Library icon (600x900)
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`,
+      // Capsule image (231x87) - smaller, good for icons
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_231x87.jpg`,
+      // Header image (460x215)
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`,
+      // Small capsule (184x69)
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_184x69.jpg`,
+      // Logo (wide format)
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/logo.png`,
     ];
   }
 }

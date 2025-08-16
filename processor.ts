@@ -7,6 +7,7 @@ import { basename, join } from "jsr:@std/path@1.0.9";
 import type { SteamInfo, SteamIconResolver } from "./steam_detector.ts";
 import { SettingsManager } from "./settings.ts";
 import { UIManager } from "./ui_manager.ts";
+import { convertToIco, preprocessSteamImage } from "./image_converter.ts";
 import {
   centerText,
   clearScreen,
@@ -190,6 +191,7 @@ export class IconProcessor {
       let lastError = "";
       
       // Try each CDN URL until one succeeds
+      let successfulUrl = "";
       for (const url of iconUrls) {
         try {
           const response = await fetch(url, {
@@ -197,6 +199,7 @@ export class IconProcessor {
           });
           if (response.ok) {
             iconBuffer = await response.arrayBuffer();
+            successfulUrl = url;
             break;
           }
           lastError = `HTTP ${response.status}`;
@@ -215,14 +218,23 @@ export class IconProcessor {
         return;
       }
       
-      // Save to the best location
-      const savePath = possiblePaths[0] || join(this.steamInfo.installPath, "steam/games", iconName);
+      // Preprocess the image if needed (e.g., cropping tall images)
+      const processedBuffer = preprocessSteamImage(successfulUrl, iconBuffer);
+      
+      // Convert to ICO format if it's not already
+      const icoData = await convertToIco(processedBuffer, 
+        successfulUrl.endsWith('.png') ? 'image/png' : 'image/jpeg');
+      
+      // Save to the best location with .ico extension
+      const saveIconName = iconName.replace(/\.(jpg|jpeg|png)$/i, '.ico');
+      const savePath = possiblePaths[0]?.replace(/\.(jpg|jpeg|png)$/i, '.ico') || 
+                      join(this.steamInfo.installPath, "steam/games", saveIconName);
       
       // Ensure directory exists
       const saveDir = savePath.substring(0, savePath.lastIndexOf("/"));
       await Deno.mkdir(saveDir, { recursive: true }).catch(() => {});
       
-      await Deno.writeFile(savePath, new Uint8Array(iconBuffer));
+      await Deno.writeFile(savePath, icoData);
 
       this.results.push({
         path: shortcutPath,
