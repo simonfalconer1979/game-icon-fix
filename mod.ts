@@ -10,13 +10,18 @@ import { IconProcessor } from "./processor.ts";
 import { SteamDetector, SteamIconResolver, type SteamInfo } from "./steam_detector.ts";
 import { ShortcutManager } from "./shortcut_manager.ts";
 import {
+  beep,
   centerText,
   clearScreen,
   colors,
   displayBanner,
+  displayTurboPascalBanner,
   drawBox,
+  drawBoxWithShadow,
+  drawStatusBar,
   moveCursor,
   showCursor,
+  turboPascal,
 } from "./ui.ts";
 import { ConsoleConfig } from "./console_utils.ts";
 import { setupFixedConsole } from "./fixed_console.ts";
@@ -28,16 +33,16 @@ import { setupFixedConsole } from "./fixed_console.ts";
  * @throws Error if Steam not found
  */
 async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
-  clearScreen();
-  displayBanner();
+  displayTurboPascalBanner();
+  drawStatusBar(105, 50, " Detecting Steam Installation...");
 
   const config = ConsoleConfig.getInstance();
   const icons = config.getIcons();
   
-  drawBox(15, 30, 55, 12, colors.fg.yellow);
-  moveCursor(32, 17);
+  drawBoxWithShadow(25, 28, 55, 12);
+  moveCursor(30, 27);
   console.log(
-    colors.fg.brightYellow + icons.search + " Searching for Steam installation..." +
+    turboPascal.windowBg + turboPascal.text + icons.search + " Searching for Steam installation..." +
       colors.reset,
   );
 
@@ -68,9 +73,9 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
       throw new Error(`Invalid Steam path: ${customPath}`);
     }
   } else {
-    moveCursor(34, 17);
+    moveCursor(21, 17);
     console.log(
-      colors.fg.cyan + "Detecting Steam automatically...".padEnd(50) + colors.reset,
+      turboPascal.windowBg + colors.fg.cyan + "Auto-detecting Steam..." + colors.reset,
     );
     
     // Use automatic detection
@@ -81,8 +86,8 @@ async function getSteamInfoWithUI(customPath?: string): Promise<SteamInfo> {
     throw new Error("Steam installation not found");
   }
 
-  moveCursor(36, 17);
-  console.log(colors.fg.green + icons.success + ` Found Steam at: ${steamInfo.installPath}` + colors.reset);
+  moveCursor(34, 27);
+  console.log(turboPascal.windowBg + colors.fg.brightGreen + icons.success + ` Found Steam at: ${steamInfo.installPath}` + colors.reset);
   
   if (steamInfo.libraries.length > 1) {
     moveCursor(37, 17);
@@ -153,23 +158,24 @@ async function processCurrentDirectory(steamInfo: SteamInfo, iconResolver: Steam
   const files = await findUrlFiles(cwd);
 
   if (files.length === 0) {
-    clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
+    drawStatusBar(105, 50, " No Files Found");
 
-    drawBox(15, 30, 55, 6, colors.fg.red);
-    moveCursor(32, 17);
+    drawBoxWithShadow(25, 28, 55, 8);
+    moveCursor(30, 27);
     console.log(
-      colors.fg.brightRed + centerText("No Steam shortcuts found!", 51) +
+      turboPascal.errorBg + turboPascal.errorText + centerText("No Steam shortcuts found!", 51) +
         colors.reset,
     );
-    moveCursor(33, 17);
+    moveCursor(31, 27);
     console.log(
-      colors.fg.white + centerText(`Searched in: ${cwd}`, 51) + colors.reset,
+      turboPascal.windowBg + turboPascal.textDim + centerText(`Searched in: ${cwd}`, 51) + colors.reset,
     );
 
-    moveCursor(35, 20);
+    beep(); // DOS beep for error
+    moveCursor(34, 30);
     console.log(
-      colors.fg.yellow + "Press any key to return to menu..." + colors.reset,
+      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset,
     );
 
     Deno.stdin.setRaw(true);
@@ -197,19 +203,20 @@ async function processDesktop(steamInfo: SteamInfo, iconResolver: SteamIconResol
   const files = await findUrlFiles(desktopPath);
 
   if (files.length === 0) {
-    clearScreen();
-    displayBanner();
+    displayTurboPascalBanner();
+    drawStatusBar(105, 50, " No Files Found");
 
-    drawBox(15, 30, 55, 6, colors.fg.red);
-    moveCursor(32, 17);
+    drawBoxWithShadow(25, 28, 55, 8);
+    moveCursor(30, 27);
     console.log(
-      colors.fg.brightRed +
+      turboPascal.errorBg + turboPascal.errorText +
         centerText("No Steam shortcuts found on Desktop!", 51) + colors.reset,
     );
 
-    moveCursor(35, 20);
+    beep(); // DOS beep for error
+    moveCursor(33, 30);
     console.log(
-      colors.fg.yellow + "Press any key to return to menu..." + colors.reset,
+      turboPascal.windowBg + turboPascal.text + "Press any key to return to menu..." + colors.reset,
     );
 
     Deno.stdin.setRaw(true);
@@ -228,7 +235,7 @@ async function processDesktop(steamInfo: SteamInfo, iconResolver: SteamIconResol
 export async function main(): Promise<void> {
   // Setup fixed console window (Windows only)
   if (Deno.build.os === "windows") {
-    await setupFixedConsole(85, 50, "Steam Icon Fixer v1.0");
+    await setupFixedConsole(80, 30, "Steam Icon Fixer v1.0 - VGA Mode");
   }
 
   // Initialize console configuration for proper character display

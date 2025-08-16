@@ -57,6 +57,27 @@ export const colors = {
   },
 };
 
+// Turbo Pascal IDE Color Scheme (circa 1990s)
+export const turboPascal = {
+  // Main UI colors
+  background: colors.bg.blue,           // Classic blue background
+  menuBar: colors.bg.cyan,              // Cyan menu bar
+  menuText: colors.fg.black,            // Black text on cyan
+  menuHighlight: colors.bg.green,       // Green selection bar
+  windowFrame: colors.fg.brightWhite,   // Bright white window frames
+  windowBg: colors.bg.blue,             // Blue window background
+  text: colors.fg.brightYellow,         // Yellow text (high contrast)
+  textDim: colors.fg.white,             // White for secondary text
+  shadow: colors.fg.black,              // Black for shadows
+  statusBar: colors.bg.cyan,            // Cyan status bar
+  statusText: colors.fg.black,          // Black status text
+  errorBg: colors.bg.red,               // Red error background
+  errorText: colors.fg.brightWhite,     // White error text
+  highlightBg: colors.bg.cyan,          // Cyan highlight
+  highlightText: colors.fg.black,       // Black highlighted text
+  hotkey: colors.fg.brightRed,          // Red for hotkey letters
+};
+
 /**
  * Clears the terminal screen and moves cursor to top-left position
  * Uses ANSI escape codes: 2J (clear screen) and H (home position)
@@ -400,4 +421,194 @@ export function drawTextWithShadow(
   // Draw text
   moveCursor(y, x);
   console.log(color + colors.bright + text + colors.reset);
+}
+
+/**
+ * Draws a box with 3D shadow effect - Classic DOS style
+ * @param x - Starting column position
+ * @param y - Starting row position
+ * @param width - Box width in characters
+ * @param height - Box height in characters
+ * @param frameColor - Color for the box frame
+ * @param fillBg - Background color to fill the box
+ */
+export function drawBoxWithShadow(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  frameColor = turboPascal.windowFrame,
+  fillBg = turboPascal.windowBg,
+): void {
+  const config = ConsoleConfig.getInstance();
+  const shadowChar = config.isAsciiMode() ? "#" : "▒";
+  
+  // Draw shadow first (offset by 1,1)
+  for (let i = 1; i < height; i++) {
+    moveCursor(y + i + 1, x + width);
+    console.log(colors.fg.black + shadowChar.repeat(2) + colors.reset);
+  }
+  moveCursor(y + height, x + 2);
+  console.log(colors.fg.black + shadowChar.repeat(width) + colors.reset);
+  
+  // Draw the filled box
+  const box = config.getBox();
+  
+  // Top border
+  moveCursor(y, x);
+  console.log(
+    frameColor + fillBg + box.topLeft + box.horizontal.repeat(width - 2) + box.topRight + colors.reset
+  );
+  
+  // Side borders with filled background
+  for (let i = 1; i < height - 1; i++) {
+    moveCursor(y + i, x);
+    console.log(
+      frameColor + fillBg + box.vertical + " ".repeat(width - 2) + box.vertical + colors.reset
+    );
+  }
+  
+  // Bottom border
+  moveCursor(y + height - 1, x);
+  console.log(
+    frameColor + fillBg + box.bottomLeft + box.horizontal.repeat(width - 2) + box.bottomRight + colors.reset
+  );
+}
+
+/**
+ * Draws a DOS-style status bar at the bottom of the screen
+ * @param width - Width of the status bar (80 for VGA)
+ * @param height - Screen height (30 for VGA)
+ * @param message - Optional message to display on the left
+ */
+export function drawStatusBar(width: number = 80, height: number = 30, message = ""): void {
+  moveCursor(height, 1);
+  
+  const time = new Date().toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  const leftText = message || " F1=Help  F10=Exit";
+  const rightText = ` VGA 640×480 │ ${time} `;
+  const padding = width - leftText.length - rightText.length;
+  
+  console.log(
+    turboPascal.statusBar + turboPascal.statusText + colors.bright +
+    leftText + " ".repeat(Math.max(0, padding)) + rightText + colors.reset
+  );
+}
+
+/**
+ * Plays a PC speaker beep (error sound)
+ * Works on Windows terminals that support bell character
+ */
+export function beep(): void {
+  // ASCII bell character (will make a beep on supported terminals)
+  Deno.stdout.writeSync(new Uint8Array([7]));
+}
+
+/**
+ * Draws menu item with hotkey highlighting (underscored letter)
+ * @param text - Menu text with ~ before the hotkey letter (e.g., "~F~ile")
+ * @param x - Column position
+ * @param y - Row position
+ * @param isSelected - Whether this item is selected
+ * @param width - Total width for the menu item
+ */
+export function drawMenuItemWithHotkey(
+  text: string,
+  x: number,
+  y: number,
+  isSelected: boolean,
+  width: number,
+): void {
+  const config = ConsoleConfig.getInstance();
+  const icons = config.getIcons();
+  
+  moveCursor(y, x);
+  
+  // Parse text for hotkey (marked with ~)
+  let displayText = "";
+  let hotkeyIndex = -1;
+  let cleanText = "";
+  
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "~" && i + 1 < text.length) {
+      hotkeyIndex = cleanText.length;
+      i++; // Skip the ~
+    }
+    cleanText += text[i];
+  }
+  
+  if (isSelected) {
+    const prefix = config.isAsciiMode() ? " > " : " " + icons.arrow + " ";
+    console.log(
+      turboPascal.menuHighlight + turboPascal.highlightText + colors.bright +
+      prefix + cleanText.padEnd(width - prefix.length) + colors.reset
+    );
+  } else {
+    // Build the text with hotkey highlighting
+    const prefix = "   ";
+    let output = turboPascal.text + prefix;
+    
+    for (let i = 0; i < cleanText.length; i++) {
+      if (i === hotkeyIndex) {
+        output += turboPascal.hotkey + colors.underscore + cleanText[i] + 
+                  colors.reset + turboPascal.text;
+      } else {
+        output += cleanText[i];
+      }
+    }
+    
+    console.log(output + " ".repeat(Math.max(0, width - prefix.length - cleanText.length)) + colors.reset);
+  }
+}
+
+/**
+ * Displays the Turbo Pascal style banner (VGA 80×30)
+ */
+export function displayTurboPascalBanner(): void {
+  clearScreen();
+  
+  // Fill background with blue (VGA 80 columns × 30 rows)
+  for (let i = 1; i <= 30; i++) {
+    moveCursor(i, 1);
+    console.log(turboPascal.background + " ".repeat(80) + colors.reset);
+  }
+  
+  const config = ConsoleConfig.getInstance();
+  // Compact banner for VGA 80×30 display
+  const banner = config.isAsciiMode() ? 
+    [
+      "  ##### ##### ##### #   #    ##### ### #   # ##### ####",
+      "  #       #   #     #   #    #      #   # #  #     #   #",
+      "  #####   #   ####  #####    ####   #    #   ####  ####",
+      "      #   #   #     #   #    #      #   # #  #     #  #",
+      "  #####   #   ##### #   #    #     ###  # #  ##### #   #",
+      "",
+      "          ═══[ Version 1.0 - VGA Mode ]═══",
+    ] :
+    [
+      "  ███████╗████████╗███████╗ █████╗ ███╗   ███╗",
+      "  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║",
+      "  ███████╗   ██║   █████╗  ███████║██╔████╔██║",
+      "  ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║",
+      "  ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║",
+      "",
+      "  ███████╗██╗██╗  ██╗███████╗██████╗",
+      "  ██╔════╝██║╚██╗██╔╝██╔════╝██╔══██╗",
+      "  █████╗  ██║ ╚███╔╝ █████╗  ██████╔╝",
+      "  ██╔══╝  ██║ ██╔██╗ ██╔══╝  ██╔══██╗",
+      "  ██║     ██║██╔╝ ██╗███████╗██║  ██║",
+      "",
+      "       ═══[ VGA 640×480 Edition ]═══",
+    ];
+  
+  let row = 3;
+  for (const line of banner) {
+    moveCursor(row++, Math.floor((80 - line.length) / 2) + 1);
+    console.log(turboPascal.background + turboPascal.text + colors.bright + line + colors.reset);
+  }
 }

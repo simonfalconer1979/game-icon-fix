@@ -313,11 +313,12 @@ export class FixedConsole {
 }
 
 /**
- * Quick setup helper for standard console
+ * Quick setup helper for VGA 640x480 console (80x30 characters)
+ * Standard VGA text mode for professional DOS applications
  */
 export async function setupFixedConsole(
-  width: number = 85,
-  height: number = 50,
+  width: number = 80,  // VGA standard 80 columns
+  height: number = 30, // VGA 480p = 30 rows with 8x16 font
   title: string = "Steam Icon Fixer"
 ): Promise<boolean> {
   const console = new FixedConsole({

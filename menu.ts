@@ -5,18 +5,24 @@
 
 // Removed unused imports - AppSettings and SettingsManager were not used in this file
 import {
+  beep,
   centerText,
   clearScreen,
   colors,
   displayBanner,
+  displayTurboPascalBanner,
   drawBox,
+  drawBoxWithShadow,
   drawDivider,
   drawMenuItem,
+  drawMenuItemWithHotkey,
+  drawStatusBar,
   drawTextWithShadow,
   hideCursor,
   moveCursor,
   showCursor,
   showStatus,
+  turboPascal,
 } from "./ui.ts";
 
 /**
@@ -65,41 +71,38 @@ export class Menu {
   }
 
   /**
-   * Draws the menu on screen
+   * Draws the menu on screen with Turbo Pascal styling
    */
   private draw(): void {
     const height = this.items.length + 6;
 
-    // Draw box
-    drawBox(this.x, this.y, this.width, height, colors.fg.magenta);
+    // Draw box with shadow
+    drawBoxWithShadow(this.x, this.y, this.width, height);
 
-    // Draw title
-    moveCursor(this.y + 1, this.x + 2);
+    // Draw title bar with Turbo Pascal menu bar color
+    moveCursor(this.y, this.x);
     console.log(
-      colors.fg.brightMagenta + colors.bright +
-        centerText(this.title, this.width - 4) +
+      turboPascal.menuBar + turboPascal.menuText + colors.bright +
+        centerText(` ═══[ ${this.title} ]═══ `, this.width) +
         colors.reset,
     );
 
-    // Draw divider
-    drawDivider(this.x + 1, this.y + 2, this.width - 2, colors.fg.magenta);
-
-    // Draw menu items
+    // Draw menu items with hotkey support
     this.items.forEach((item, index) => {
-      drawMenuItem(
+      drawMenuItemWithHotkey(
         item.label,
         this.x + 2,
-        this.y + 4 + index,
+        this.y + 3 + index,
         index === this.selectedIndex,
         this.width - 4,
       );
     });
 
-    // Draw bottom help text
+    // Draw F-key shortcuts at bottom
     moveCursor(this.y + height - 2, this.x + 2);
     console.log(
-      colors.fg.gray + colors.dim +
-        centerText("↑↓ Navigate │ Enter Select │ ESC Back", this.width - 4) +
+      turboPascal.windowBg + colors.fg.white + colors.dim +
+        centerText("↑↓ Navigate │ Enter=Select │ ESC=Back", this.width - 4) +
         colors.reset,
     );
   }
@@ -136,8 +139,17 @@ export class Menu {
           return selected.id;
         }
         case "escape":
+          beep(); // Classic DOS beep on ESC
           this.isActive = false;
           return null;
+        case "f1":
+          // F1 for help
+          beep();
+          break;
+        case "f10":
+          // F10 for exit
+          this.isActive = false;
+          return "exit";
       }
     }
 
@@ -173,7 +185,7 @@ export class Menu {
     // Handle special keys
     if (buffer[0] === 27) { // ESC sequence
       if (n === 1) return "escape";
-      if (buffer[1] === 91) { // Arrow keys
+      if (buffer[1] === 91) { // Arrow keys and F-keys
         switch (buffer[2]) {
           case 65:
             return "up";
@@ -183,6 +195,21 @@ export class Menu {
             return "right";
           case 68:
             return "left";
+          case 49: // F-keys start
+            if (n > 3 && buffer[3] === 126) return "f1";
+            if (n > 3 && buffer[3] === 53 && buffer[4] === 126) return "f5";
+            break;
+          case 50:
+            if (n > 3 && buffer[3] === 48 && buffer[4] === 126) return "f9";
+            if (n > 3 && buffer[3] === 49 && buffer[4] === 126) return "f10";
+            break;
+        }
+      } else if (buffer[1] === 79) { // F1-F4 on some terminals
+        switch (buffer[2]) {
+          case 80: return "f1";
+          case 81: return "f2";
+          case 82: return "f3";
+          case 83: return "f4";
         }
       }
     }
@@ -200,94 +227,103 @@ export class Menu {
  * @returns The selected menu item ID or null
  */
 export async function showMainMenu(): Promise<string | null> {
-  displayBanner();
+  displayTurboPascalBanner();
 
-  // Add retro subtitle
-  drawTextWithShadow("« Retro Icon Recovery Tool »", 20, 26, colors.fg.yellow);
+  // Draw status bar at VGA bottom (row 30)
+  drawStatusBar(80, 30, " F1=Help  F10=Exit");
 
   const menuItems: MenuItem[] = [
     {
       id: "fix-current",
-      label: "Fix Icons in Current Directory",
+      label: "~F~ix Icons in Current Directory",
     },
     {
       id: "fix-desktop",
-      label: "Fix Icons on Desktop",
+      label: "Fix Icons on ~D~esktop",
     },
     {
       id: "browse",
-      label: "Browse for Directory...",
+      label: "~B~rowse for Directory...",
     },
     {
       id: "select-files",
-      label: "Select Specific Files...",
+      label: "~S~elect Specific Files...",
     },
     {
       id: "refresh-all",
-      label: "Replace ALL Desktop Shortcuts",
+      label: "~R~eplace ALL Desktop Shortcuts",
     },
     {
       id: "settings",
-      label: "Settings & Options",
+      label: "Settings & ~O~ptions",
     },
     {
       id: "exit",
-      label: "Exit",
+      label: "E~x~it",
     },
   ];
 
-  const menu = new Menu("MAIN MENU", menuItems);
-  return await menu.show();
+  // Center menu on VGA screen (80×30)
+  const menu = new Menu("MAIN MENU", menuItems, 15, 16, 50);
+  const result = await menu.show();
+  
+  // Handle F-key shortcuts
+  if (result === "exit") {
+    return "exit";
+  }
+  
+  return result;
 }
 
 /**
  * Displays the settings menu
  */
 export async function showSettingsMenu(): Promise<void> {
-  clearScreen();
-  displayBanner();
+  displayTurboPascalBanner();
+  drawStatusBar(80, 30, " F1=Help  ESC=Back");
 
   const settingsItems: MenuItem[] = [
     {
       id: "steam-path",
-      label: "Configure Steam Path",
+      label: "~C~onfigure Steam Path",
       action: async () => {
-        // TODO: Implement steam path configuration
-        showStatus("info", "Steam path configuration coming soon!", 15, 40);
+        beep();
+        showStatus("info", "Steam path configuration coming soon!", 15, 25);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
     {
       id: "backup",
-      label: "Enable Icon Backup",
+      label: "Enable Icon ~B~ackup",
       action: async () => {
-        showStatus("success", "Backup enabled!", 15, 40);
+        showStatus("success", "Backup enabled!", 15, 25);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
     {
       id: "parallel",
-      label: "Parallel Downloads: ON",
+      label: "~P~arallel Downloads: ON",
       action: async () => {
-        showStatus("success", "Parallel downloads toggled!", 15, 40);
+        showStatus("success", "Parallel downloads toggled!", 15, 25);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
     {
       id: "cache",
-      label: "Clear Icon Cache",
+      label: "Clear Icon Cac~h~e",
       action: async () => {
-        showStatus("warning", "Cache cleared!", 15, 40);
+        showStatus("warning", "Cache cleared!", 15, 25);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       },
     },
     {
       id: "back",
-      label: "← Back to Main Menu",
+      label: "← ~B~ack to Main Menu",
     },
   ];
 
-  const menu = new Menu("SETTINGS", settingsItems);
+  // Center menu on VGA screen
+  const menu = new Menu("SETTINGS", settingsItems, 15, 16, 50);
   const choice = await menu.show();
   
   // Handle settings choices
