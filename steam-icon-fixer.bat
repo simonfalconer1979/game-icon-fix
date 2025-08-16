@@ -93,11 +93,13 @@ echo   ^|                  Launching Interactive UI...                  ^|
 echo   +===============================================================+
 echo.
 echo   Features:
+echo   * Fixed-size non-resizable console window
 echo   * Automatic Steam detection across all libraries
 echo   * Directory browser with file selection
 echo   * Real-time progress tracking
 echo   * Color-coded status updates
 echo.
+echo   The application will open in a fixed 85x50 character window.
 echo   Starting...
 echo.
 deno run -N -R -W -E --allow-run mod.ts

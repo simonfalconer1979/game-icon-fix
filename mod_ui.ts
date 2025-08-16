@@ -20,6 +20,7 @@ import {
   showCursor,
 } from "./ui.ts";
 import { ConsoleConfig } from "./console_utils.ts";
+import { setupFixedConsole } from "./fixed_console.ts";
 
 // Removed unused constants and functions
 // Steam detection is now handled by SteamDetector class
@@ -236,6 +237,11 @@ async function main(): Promise<void> {
     // Use original non-UI mode for command line usage
     await import("./mod.ts");
     return;
+  }
+
+  // Setup fixed console window (Windows only)
+  if (Deno.build.os === "windows") {
+    await setupFixedConsole(85, 50, "Steam Icon Fixer v1.0");
   }
 
   // UI mode
