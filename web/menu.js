@@ -84,7 +84,7 @@ export function showTopMenu() {
     { id: 'fix-desktop', label: 'Fix Icons on Desktop', action: () => fixDesktopIcons() },
     { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
-    { id: 'exit', label: 'Exit', action: () => showMessage('Thanks for using Icon Fixer!') },
+    { id: 'exit', label: 'Exit', action: () => exitToDOS() },
   ]);
   window.currentMenu = menu;
   menu.draw();
@@ -182,4 +182,41 @@ function showMessage(msg, type = 'info') {
                 type === 'warning' ? 'white' : 'cyan';
   
   setStatus(msg, color, 3000);
+}
+
+function exitToDOS() {
+  clearScreen();
+  
+  // Show fake DOS prompt
+  putText(0, 0, "Microsoft(R) MS-DOS(R) Version 6.22", 'white');
+  putText(0, 1, "(C)Copyright Microsoft Corp 1981-1994.", 'white');
+  putText(0, 2, "", 'white');
+  putText(0, 3, "C:\\GAMES\\ICONFIXER>exit", 'white');
+  putText(0, 4, "", 'white');
+  putText(0, 5, "Thank you for using Steam Icon Fixer!", 'cyan');
+  putText(0, 6, "", 'white');
+  putText(0, 7, "C:\\GAMES>_", 'white');
+  
+  // Add blinking cursor effect
+  let cursorVisible = true;
+  const cursorInterval = setInterval(() => {
+    const cursor = cursorVisible ? "_" : " ";
+    putText(8, 7, cursor, 'white');
+    flush();
+    cursorVisible = !cursorVisible;
+  }, 500);
+  
+  // Add a message at the bottom
+  putText(0, CGA.rows - 2, "Press any key to restart Icon Fixer...", 'cyan');
+  flush();
+  
+  // Listen for any key to restart
+  const restartHandler = (e) => {
+    e.preventDefault();
+    clearInterval(cursorInterval);
+    document.removeEventListener('keydown', restartHandler);
+    showTopMenu();
+  };
+  
+  document.addEventListener('keydown', restartHandler);
 }
