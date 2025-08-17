@@ -6,6 +6,8 @@ export const CGA = {
 
 let buffer;
 let colorBuffer;
+let backBuffer;
+let backColorBuffer;
 
 // CGA Palette 0 color codes
 const CGA_COLORS = {
@@ -19,7 +21,31 @@ const CGA_COLORS = {
 export function clearScreen(fill = " ") {
   buffer = Array.from({ length: CGA.rows }, () => fill.repeat(CGA.cols));
   colorBuffer = Array.from({ length: CGA.rows }, () => []);
+  backBuffer = Array.from({ length: CGA.rows }, () => fill.repeat(CGA.cols));
+  backColorBuffer = Array.from({ length: CGA.rows }, () => []);
   flush();
+}
+
+// Begin drawing to back buffer
+export function beginDraw() {
+  if (!backBuffer) {
+    backBuffer = Array.from({ length: CGA.rows }, () => " ".repeat(CGA.cols));
+    backColorBuffer = Array.from({ length: CGA.rows }, () => []);
+  }
+  // Clear back buffer
+  for (let y = 0; y < CGA.rows; y++) {
+    backBuffer[y] = " ".repeat(CGA.cols);
+    backColorBuffer[y] = [];
+  }
+}
+
+// End drawing and swap buffers
+export function endDraw() {
+  if (backBuffer) {
+    buffer = [...backBuffer];
+    colorBuffer = backColorBuffer.map(row => [...row]);
+    flush();
+  }
 }
 
 export function flush() {
@@ -65,16 +91,22 @@ function escapeHtml(text) {
 }
 
 export function putText(x, y, text, color = null) {
-  if (!buffer || y < 0 || y >= CGA.rows || x < 0) return;
+  if (y < 0 || y >= CGA.rows || x < 0) return;
   if (text.length === 0) return;
   
-  const row = buffer[y] || " ".repeat(CGA.cols);
+  // Use back buffer if we're in drawing mode, otherwise front buffer
+  const targetBuffer = backBuffer ? backBuffer : buffer;
+  const targetColorBuffer = backBuffer ? backColorBuffer : colorBuffer;
+  
+  if (!targetBuffer) return;
+  
+  const row = targetBuffer[y] || " ".repeat(CGA.cols);
   const safeText = text.substring(0, CGA.cols - x);
-  buffer[y] = row.substring(0, x) + safeText + row.substring(x + safeText.length);
+  targetBuffer[y] = row.substring(0, x) + safeText + row.substring(x + safeText.length);
   
   // Store color information
-  if (color && colorBuffer[y]) {
-    colorBuffer[y].push({
+  if (color && targetColorBuffer[y]) {
+    targetColorBuffer[y].push({
       start: x,
       end: x + safeText.length,
       color: color
