@@ -288,31 +288,43 @@ function showLibrariesPopup(steamInfo, libraries) {
     // Draw popup box
     drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
     
-    // Title
+    // Title - clear line first
+    putText(popupX + 1, popupY + 1, " ".repeat(popupWidth - 2), 'white');
     const title = "STEAM INSTALLATION DETECTED";
     putText(popupX + Math.floor((popupWidth - title.length) / 2), popupY + 1, title, 'magenta');
+    
+    // Divider line
     putText(popupX + 1, popupY + 2, "-".repeat(popupWidth - 2), 'cyan');
     
-    // Steam info (truncate long paths)
+    // Clear and write Steam info (truncate long paths)
+    putText(popupX + 2, popupY + 4, " ".repeat(popupWidth - 4), 'white');
     let mainPath = `Main Path: ${steamInfo.installPath}`;
     if (mainPath.length > popupWidth - 4) {
       mainPath = mainPath.substring(0, popupWidth - 7) + "...";
     }
     putText(popupX + 2, popupY + 4, mainPath, 'white');
     
+    putText(popupX + 2, popupY + 5, " ".repeat(popupWidth - 4), 'white');
     let userId = `User ID: ${steamInfo.userId}`;
     if (userId.length > popupWidth - 4) {
       userId = userId.substring(0, popupWidth - 7) + "...";
     }
     putText(popupX + 2, popupY + 5, userId, 'white');
     
+    putText(popupX + 2, popupY + 6, " ".repeat(popupWidth - 4), 'white');
     putText(popupX + 2, popupY + 6, `Libraries Found: ${steamInfo.libraries}`, 'white');
     
+    // Divider line
     putText(popupX + 1, popupY + 7, "-".repeat(popupWidth - 2), 'cyan');
     
-    // Library paths
+    // Library paths - clear line first
+    putText(popupX + 2, popupY + 8, " ".repeat(popupWidth - 4), 'white');
     putText(popupX + 2, popupY + 8, "Library Paths:", 'magenta');
+    
     for (let i = 0; i < Math.min(libraries.length, 5); i++) {
+      // Clear line first
+      putText(popupX + 2, popupY + 9 + i, " ".repeat(popupWidth - 4), 'white');
+      
       const lib = libraries[i];
       let pathDisplay = `  ${i + 1}. ${lib.path}`;
       if (lib.label) {
@@ -326,11 +338,13 @@ function showLibrariesPopup(steamInfo, libraries) {
     }
     
     if (libraries.length > 5) {
+      putText(popupX + 2, popupY + 14, " ".repeat(popupWidth - 4), 'white');
       putText(popupX + 2, popupY + 14, `  ... and ${libraries.length - 5} more`, 'cyan');
     }
     
-    // Close button
+    // Close button - clear lines first
     putText(popupX + 1, popupY + popupHeight - 2, "-".repeat(popupWidth - 2), 'cyan');
+    putText(popupX + 1, popupY + popupHeight - 1, " ".repeat(popupWidth - 2), 'white');
     const closeText = "[ Press ESC or ENTER to close ]";
     putText(popupX + Math.floor((popupWidth - closeText.length) / 2), popupY + popupHeight - 1, closeText, 'white');
     
