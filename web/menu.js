@@ -24,7 +24,7 @@ export class Menu {
     putText(0, 4, "=".repeat(CGA.cols), 'white');
     
     // Draw menu - simpler layout
-    const menuY = 7;
+    const menuY = 6;
     
     // Menu title
     putText(Math.floor((CGA.cols - this.title.length) / 2), menuY, this.title, 'white');
@@ -40,11 +40,11 @@ export class Menu {
       putText(itemX, menuY + 3 + i, text, color);
     }
     
-    // Status message bar (2 lines from bottom)
-    putText(0, CGA.rows - 4, "=".repeat(CGA.cols), 'white');
+    // Status message bar (closer to menu)
+    putText(0, CGA.rows - 5, "=".repeat(CGA.cols), 'white');
     if (statusMessage) {
       const msgX = Math.floor((CGA.cols - statusMessage.length) / 2);
-      putText(msgX, CGA.rows - 3, statusMessage, statusColor);
+      putText(msgX, CGA.rows - 4, statusMessage, statusColor);
     }
     
     // Help text at bottom in WHITE
