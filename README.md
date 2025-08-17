@@ -1,11 +1,16 @@
-# 🎮 Game Icon Fixer
+# 🎮 Game Icon Fixer (Web)
 
 [![Deno](https://img.shields.io/badge/deno-2.x-blue?logo=deno)](https://deno.land)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-orange)](https://github.com/simonfalconer1979/game-icon-fix)
 [![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://www.microsoft.com/windows)
 
-Fix blank desktop shortcut icons for your PC games with an interactive retro ASCII interface. Currently supports Steam games with automatic detection, multi-library support, and beautiful terminal-based navigation.
+Fix blank desktop shortcut icons with a retro 1990s ASCII interface — now available as a web app with a fixed 160×64 SVGA-style grid and monospaced font for an authentic look.
+
+## 🌐 Live Demo
+
+- Deployed via GitHub Pages (from `web/`). If disabled, enable Pages in repo settings.
+- Local preview instructions below.
 
 ## 🆕 Recent Updates
 
@@ -26,7 +31,7 @@ Fix blank desktop shortcut icons for your PC games with an interactive retro ASC
 - **🔄 Smart Caching** - Skips already-fixed icons to save time
 - **🌐 CDN Fallbacks** - Multiple download sources for reliability
 
-## 📦 Installation
+## 📦 Run Locally (Web)
 
 ### Prerequisites
 - Windows 10/11
@@ -35,30 +40,24 @@ Fix blank desktop shortcut icons for your PC games with an interactive retro ASC
   - [Deno](https://deno.land) runtime (for running from source)
   - Or just download the batch file (includes Deno)
 
-### Option 1: Download Batch File (Easiest)
-1. Download [`game-icon-fixer.bat`](https://github.com/simonfalconer1979/game-icon-fix/releases/latest)
-2. Save it anywhere on your computer
-3. Double-click to run
-4. Navigate through the interactive ASCII menu
+### Option 1: Use Batch Launcher (Windows)
+1. Double-click `steam-icon-fixer.bat`
+2. It starts a local server and opens `http://127.0.0.1:5173`
 
-### Option 2: Install Deno & Run
+### Option 2: Serve with Deno (any OS)
 ```bash
-# Install Deno (if not already installed)
-# Windows (PowerShell):
-irm https://deno.land/install.ps1 | iex
-
-# Run the app directly
-deno run -N -R -W --allow-run https://raw.githubusercontent.com/simonfalconer1979/game-icon-fix/main/mod.ts
+deno run -A https://deno.land/std@0.224.0/http/file_server.ts ./web --port 5173 --cors
 ```
 
-### Option 3: Clone & Run Locally
+### Option 3: Clone & Open
 ```bash
 # Clone the repository
 git clone https://github.com/simonfalconer1979/game-icon-fix.git
 cd game-icon-fix
-
-# Run the app
-deno run -N -R -W --allow-run mod.ts
+# Serve /web and open http://127.0.0.1:5173 (pick one)
+deno run -A https://deno.land/std@0.224.0/http/file_server.ts ./web --port 5173 --cors
+# or
+python -m http.server 5173 --directory web
 ```
 
 ## 🚀 Quick Start
@@ -125,7 +124,7 @@ Summary:
 4. **Downloads Icons** - Fetches missing icons from Steam CDN
 5. **Saves Icons** - Places icons in Steam's games folder
 
-## 🖥️ Interactive Menu
+## 🖥️ Interactive Menu (Web)
 
 ```
      GAME ICON FIXER
@@ -167,19 +166,14 @@ Summary:
 
 ### Future Features
 - **📱 Game Streaming Services** - GeForce NOW, Xbox Cloud Gaming
-- **🎮 Other Launchers** - Battle.net, Origin, Ubisoft Connect
 - **🖼️ Custom Icons** - Allow users to set custom icons
 - **📊 Statistics** - Track fixed icons and processing time
 - **🔄 Scheduled Fixes** - Auto-fix on schedule or startup
 
-## 🛡️ Permissions
+## 🛡️ Permissions (Web)
 
-| Permission | Purpose |
-|------------|---------|
-| `-N` | Download icons from Steam CDN |
-| `-R` | Read Steam folders and shortcuts |
-| `-W` | Save icon files |
-| `--allow-run` | Access Windows Registry |
+- Runs entirely in the browser — no elevated permissions required.
+- Desktop shortcut integration is planned via downloadable helper and will request permissions as needed.
 
 ## 🐛 Troubleshooting
 
@@ -285,7 +279,7 @@ A: Network (download icons), Read (scan folders), Write (save icons), Run (acces
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🛠️ Development
+## 🛠️ Development (Web)
 
 ### Setting Up Development Environment
 ```bash
@@ -301,46 +295,19 @@ irm https://deno.land/install.ps1 | iex
 deno run -N -R -W --allow-run mod.ts
 ```
 
-### Development Commands
-```bash
-# Run the app
-deno run -N -R -W --allow-run mod.ts
-
-# Lint code
-deno lint
-
-# Format code
-deno fmt
-
-# Type check
-deno check mod.ts
-
-# Run tests (when available)
-deno test --allow-all
-```
+### Development Notes
+- Web UI lives under `web/` and is plain HTML/CSS/JS (no build step).
+- Fixed 160×64 grid via `web/ui.js` text buffer and VT323 font.
 
 ### Project Structure
 ```
 game-icon-fix/
-├── mod.ts                 # Main entry point
-├── ui.ts                  # Terminal UI utilities
-├── ui_manager.ts          # Cursor & display management
-├── menu.ts                # Menu system
-├── browser.ts             # File/directory browser
-├── processor.ts           # Icon processing logic
-├── steam_detector.ts      # Steam detection & VDF parsing
-├── shortcut_manager.ts    # Shortcut creation/management
-├── settings.ts            # User preferences
-└── console_utils.ts       # Console compatibility
-```
-
-### Building for Distribution
-```bash
-# Create a self-contained executable (coming in v2.0)
-deno compile --allow-all --output game-icon-fixer.exe mod.ts
-
-# Create batch launcher
-echo @deno run -N -R -W --allow-run %~dp0mod.ts %* > game-icon-fixer.bat
+├── web/                   # Web app (deployed)
+│   ├── index.html
+│   ├── styles.css
+│   ├── ui.js
+│   ├── menu.js
+│   └── main.js
 ```
 
 ## 🤝 Contributing

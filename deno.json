@@ -7,5 +7,8 @@
     "@std/cli": "jsr:@std/cli@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
     "@std/fs": "jsr:@std/fs@^1.0.8"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.window", "esnext"]
   }
 }
