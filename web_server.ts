@@ -290,6 +290,24 @@ function jsonResponse(data: any, status = 200): Response {
   });
 }
 
-// Start server
+// Start server with error handling
 console.log(`Starting web server on http://localhost:${PORT}`);
-await serve(handleRequest, { port: PORT });
+try {
+  await serve(handleRequest, { port: PORT });
+} catch (error) {
+  if (error.message.includes("AddrInUse") || error.message.includes("10048")) {
+    console.error(`
+ERROR: Port ${PORT} is already in use!
+
+To fix this:
+1. Close any other instances of this application
+2. Or run: taskkill /F /IM deno.exe
+3. Then restart the application
+
+If the problem persists, try changing the port in web_server.ts
+    `);
+  } else {
+    console.error("Server error:", error);
+  }
+  Deno.exit(1);
+}

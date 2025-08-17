@@ -22,6 +22,12 @@ if errorlevel 1 (
   exit /b 1
 )
 
+:: Kill any existing deno processes on port 5174
+taskkill /F /FI "WINDOWTITLE eq Icon Fixer Server*" >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5174 ^| findstr LISTENING') do (
+  taskkill /F /PID %%a >nul 2>&1
+)
+
 :: Start server immediately
 cls
 color 0A
@@ -35,6 +41,10 @@ echo   ╚═══════════════════════�
 echo.
 echo   Starting web server at: http://localhost:5174
 echo.
+
+:: Wait a moment for port to be freed
+timeout /t 1 /nobreak >nul
+
 echo   Opening browser...
 start "" http://localhost:5174
 echo.
