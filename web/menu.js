@@ -40,17 +40,37 @@ export class Menu {
       putText(itemX, menuY + 3 + i, text, color);
     }
     
-    // Status message bar (moved up 6 lines from original)
+    // Status message bar (expanded to 3 lines)
     putText(0, CGA.rows - 11, "=".repeat(CGA.cols), 'white');
+    
+    // Split message into multiple lines if needed
     if (statusMessage) {
-      const msgX = Math.floor((CGA.cols - statusMessage.length) / 2);
-      putText(msgX, CGA.rows - 10, statusMessage, statusColor);
+      const maxWidth = 70;
+      const words = statusMessage.split(' ');
+      const lines = [];
+      let currentLine = '';
+      
+      for (const word of words) {
+        if ((currentLine + ' ' + word).trim().length <= maxWidth) {
+          currentLine = (currentLine + ' ' + word).trim();
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      
+      // Display up to 3 lines of message
+      for (let i = 0; i < Math.min(lines.length, 3); i++) {
+        const msgX = Math.floor((CGA.cols - lines[i].length) / 2);
+        putText(msgX, CGA.rows - 10 + i, lines[i], statusColor);
+      }
     }
     
-    // Help text at bottom (moved up 6 lines from original)
-    putText(0, CGA.rows - 8, "-".repeat(CGA.cols), 'white');
+    // Help text at bottom (moved down to accommodate larger message area)
+    putText(0, CGA.rows - 6, "-".repeat(CGA.cols), 'white');
     const helpText = "UP/DOWN: Navigate | ENTER: Select | ESC: Exit";
-    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 7, helpText, 'white');
+    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 5, helpText, 'white');
     
     flush();
   }
@@ -97,10 +117,10 @@ async function detectSteam() {
   const result = await IconFixerAPI.detectSteam();
   
   if (result.success) {
-    const msg = `Steam found: ${result.data.installPath} (${result.data.libraries} libraries)`;
+    const msg = `Steam successfully detected! Installation path: ${result.data.installPath}. Found ${result.data.libraries} Steam libraries configured. User ID: ${result.data.userId}`;
     showMessage(msg, 'success');
   } else {
-    showMessage(`Steam not found: ${result.error}`, 'error');
+    showMessage(`Steam not found: ${result.error}. Please ensure Steam is installed and has been run at least once.`, 'error');
   }
 }
 
@@ -128,7 +148,7 @@ async function fixDesktopIcons() {
   const result = await IconFixerAPI.fixDesktopIcons();
   
   if (result.success) {
-    const msg = `SUCCESS: Fixed ${result.data.successful} of ${result.data.total} icons (${result.data.failed} failed)`;
+    const msg = `SUCCESS: Fixed ${result.data.successful} of ${result.data.total} icons. ${result.data.failed > 0 ? `${result.data.failed} icons could not be downloaded from Steam CDN.` : 'All icons successfully downloaded and applied!'}`;
     showMessage(msg, 'success');
   } else {
     showMessage(`Error: ${result.error}`, 'error');
