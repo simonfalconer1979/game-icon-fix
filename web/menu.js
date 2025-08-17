@@ -13,9 +13,13 @@ export class Menu {
   }
 
   draw() {
+    console.log('Menu.draw() called');
     clearScreen();
+    console.log('clearScreen() completed');
     this.drawContent();
+    console.log('drawContent() completed');
     flush();
+    console.log('flush() completed');
   }
 
   drawToBuffer() {
@@ -105,6 +109,7 @@ export class Menu {
 }
 
 export function showTopMenu() {
+  console.log('showTopMenu called');
   const menu = new Menu('MAIN MENU', [
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'scan-games', label: 'Scan for Installed Games', action: () => scanInstalledGames() },
@@ -113,8 +118,11 @@ export function showTopMenu() {
     { id: 'exit', label: 'Exit', action: () => exitToDOS() },
     { id: 'shutdown', label: 'Shutdown', action: () => shutdownSequence() },
   ]);
+  console.log('Menu created with items:', menu.items.length);
   window.currentMenu = menu;
+  console.log('About to call menu.draw()');
   menu.draw();
+  console.log('Menu.draw() completed');
   return menu;
 }
 

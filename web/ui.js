@@ -94,6 +94,12 @@ export function putText(x, y, text, color = null) {
   if (y < 0 || y >= CGA.rows || x < 0) return;
   if (text.length === 0) return;
   
+  // Initialize buffers if they don't exist
+  if (!buffer) {
+    buffer = Array.from({ length: CGA.rows }, () => " ".repeat(CGA.cols));
+    colorBuffer = Array.from({ length: CGA.rows }, () => []);
+  }
+  
   // Use back buffer if we're in drawing mode, otherwise front buffer
   const targetBuffer = backBuffer ? backBuffer : buffer;
   const targetColorBuffer = backBuffer ? backColorBuffer : colorBuffer;

@@ -9,8 +9,11 @@ function setController(ctrl) {
 }
 
 function boot() {
+  console.log('Boot function called');
   clearScreen();
+  console.log('Screen cleared');
   const menu = showTopMenu();
+  console.log('Menu created:', menu);
   setController(menu);
 
   // Keyboard routing
