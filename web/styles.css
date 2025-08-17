@@ -1,0 +1,65 @@
+:root{
+  --bg: #001b2e;
+  --win-bg: #002b4a;
+  --menu-bar: #003b66;
+  --text: #d0e7ff;
+  --text-dim: #8fb7d9;
+  --accent: #00e5ff;
+  --shadow: rgba(0,0,0,0.5);
+  --status-bg: #003b66;
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "VT323", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+#svga-root{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+}
+
+/* Fixed SVGA 160x64 text grid using monospace metrics */
+.screen{
+  position:relative;
+  white-space:pre;
+  letter-spacing:0px;
+  line-height:1.0;
+  background: var(--win-bg);
+  color: var(--text);
+  width: 160ch; /* 160 columns */
+  height: calc(64 * 1em); /* 64 rows */
+  box-shadow: 0 10px 30px var(--shadow), 0 0 0 2px #0a2a44 inset;
+  border: 2px solid #0f406b;
+  padding: 0; /* content is drawn as text buffer */
+  overflow:hidden;
+}
+
+.status-bar{
+  position:absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text);
+  font: inherit;
+  opacity: 0.9;
+}
+
+/* Scale container to fit viewport while preserving aspect */
+#svga-root{
+  --target-w: calc(160 * 12px);
+  --target-h: calc(64 * 20px);
+}
+
+@media (min-aspect-ratio: 160/64){
+  #svga-root .screen{ transform: scale(var(--scale,1)); transform-origin: center; }
+}
+
+/* Turbo Pascal inspired colors for inline spans (optional) */
+.tp-accent{ color: var(--accent); }
+.tp-dim{ color: var(--text-dim); }
