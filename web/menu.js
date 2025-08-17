@@ -289,14 +289,24 @@ function showLibrariesPopup(steamInfo, libraries) {
     // Title
     const title = "STEAM INSTALLATION DETECTED";
     putText(popupX + Math.floor((popupWidth - title.length) / 2), popupY + 1, title, 'magenta');
-    putText(popupX + 1, popupY + 2, "─".repeat(popupWidth - 2), 'cyan');
+    putText(popupX + 1, popupY + 2, "-".repeat(popupWidth - 2), 'cyan');
     
-    // Steam info
-    putText(popupX + 2, popupY + 4, `Main Path: ${steamInfo.installPath}`, 'white');
-    putText(popupX + 2, popupY + 5, `User ID: ${steamInfo.userId}`, 'white');
+    // Steam info (truncate long paths)
+    let mainPath = `Main Path: ${steamInfo.installPath}`;
+    if (mainPath.length > popupWidth - 4) {
+      mainPath = mainPath.substring(0, popupWidth - 7) + "...";
+    }
+    putText(popupX + 2, popupY + 4, mainPath, 'white');
+    
+    let userId = `User ID: ${steamInfo.userId}`;
+    if (userId.length > popupWidth - 4) {
+      userId = userId.substring(0, popupWidth - 7) + "...";
+    }
+    putText(popupX + 2, popupY + 5, userId, 'white');
+    
     putText(popupX + 2, popupY + 6, `Libraries Found: ${steamInfo.libraries}`, 'white');
     
-    putText(popupX + 1, popupY + 7, "─".repeat(popupWidth - 2), 'cyan');
+    putText(popupX + 1, popupY + 7, "-".repeat(popupWidth - 2), 'cyan');
     
     // Library paths
     putText(popupX + 2, popupY + 8, "Library Paths:", 'magenta');
@@ -318,7 +328,7 @@ function showLibrariesPopup(steamInfo, libraries) {
     }
     
     // Close button
-    putText(popupX + 1, popupY + popupHeight - 2, "─".repeat(popupWidth - 2), 'cyan');
+    putText(popupX + 1, popupY + popupHeight - 2, "-".repeat(popupWidth - 2), 'cyan');
     const closeText = "[ Press ESC or ENTER to close ]";
     putText(popupX + Math.floor((popupWidth - closeText.length) / 2), popupY + popupHeight - 1, closeText, 'white');
     
@@ -370,7 +380,7 @@ function showGamesPopup(games) {
     // Title
     const title = `INSTALLED GAMES (${games.length} Total)`;
     putText(popupX + Math.floor((popupWidth - title.length) / 2), popupY + 1, title, 'magenta');
-    putText(popupX + 1, popupY + 2, "─".repeat(popupWidth - 2), 'cyan');
+    putText(popupX + 1, popupY + 2, "-".repeat(popupWidth - 2), 'cyan');
     
     // Draw visible games
     const endIndex = Math.min(scrollOffset + visibleItems, games.length);
@@ -394,15 +404,15 @@ function showGamesPopup(games) {
     
     // Scroll indicators
     if (scrollOffset > 0) {
-      putText(popupX + popupWidth - 3, popupY + 3, "▲", 'cyan');
+      putText(popupX + popupWidth - 3, popupY + 3, "^", 'cyan');
     }
     if (scrollOffset + visibleItems < games.length) {
-      putText(popupX + popupWidth - 3, popupY + popupHeight - 3, "▼", 'cyan');
+      putText(popupX + popupWidth - 3, popupY + popupHeight - 3, "v", 'cyan');
     }
     
     // Help text
-    putText(popupX + 1, popupY + popupHeight - 2, "─".repeat(popupWidth - 2), 'cyan');
-    const helpText = "↑↓: Scroll | ESC: Close | ENTER: Create Shortcut";
+    putText(popupX + 1, popupY + popupHeight - 2, "-".repeat(popupWidth - 2), 'cyan');
+    const helpText = "UP/DOWN: Scroll | ESC: Close | ENTER: Create Shortcut";
     putText(popupX + Math.floor((popupWidth - helpText.length) / 2), popupY + popupHeight - 1, helpText, 'white');
     
     flush();
