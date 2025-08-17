@@ -101,6 +101,7 @@ export class Menu {
 
 export function showTopMenu() {
   const menu = new Menu('MAIN MENU', [
+    { id: 'scan-games', label: 'Scan for Installed Games', action: () => scanInstalledGames() },
     { id: 'fix-desktop', label: 'Fix Icons on Desktop', action: () => fixDesktopIcons() },
     { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
@@ -110,6 +111,34 @@ export function showTopMenu() {
   window.currentMenu = menu;
   menu.draw();
   return menu;
+}
+
+async function scanInstalledGames() {
+  showProgress('Scanning Steam libraries for installed games...');
+  
+  // Add a small delay to show the progress message
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const result = await IconFixerAPI.getInstalledGames();
+  
+  if (result.success) {
+    const total = result.data.total;
+    if (total === 0) {
+      showMessage('No Steam games found. Please install games through Steam first.', 'warning');
+    } else if (total <= 10) {
+      // Show all game names if 10 or fewer
+      const gameList = result.data.games.map(g => g.name).join(', ');
+      const msg = `Found ${total} installed game${total === 1 ? '' : 's'}: ${gameList}`;
+      showMessage(msg, 'success');
+    } else {
+      // Show count and first few games if more than 10
+      const firstGames = result.data.games.slice(0, 5).map(g => g.name).join(', ');
+      const msg = `Found ${total} installed Steam games! Including: ${firstGames}, and ${total - 5} more...`;
+      showMessage(msg, 'success');
+    }
+  } else {
+    showMessage(`Error scanning games: ${result.error}`, 'error');
+  }
 }
 
 async function detectSteam() {

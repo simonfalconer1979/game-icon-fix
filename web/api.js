@@ -91,4 +91,18 @@ export class IconFixerAPI {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Get list of installed Steam games
+   */
+  static async getInstalledGames() {
+    try {
+      const response = await fetch(`${API_BASE}/games/installed`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get installed games:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }

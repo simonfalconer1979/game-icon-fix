@@ -161,6 +161,66 @@ async function handleAPI(req: Request, pathname: string): Promise<Response> {
       });
     }
 
+    // Get installed games
+    if (pathname === "/api/games/installed") {
+      const steamInfo = await SteamDetector.detect();
+      
+      if (!steamInfo) {
+        return jsonResponse({
+          success: false,
+          error: "Steam not found"
+        }, 404);
+      }
+
+      const games = [];
+      
+      // Parse Steam library folders
+      for (const library of steamInfo.libraries) {
+        try {
+          const steamappsPath = join(library, "steamapps");
+          
+          // Read appmanifest files
+          for await (const entry of Deno.readDir(steamappsPath)) {
+            if (entry.name.startsWith("appmanifest_") && entry.name.endsWith(".acf")) {
+              try {
+                const manifestPath = join(steamappsPath, entry.name);
+                const content = await Deno.readTextFile(manifestPath);
+                
+                // Parse ACF file for game info
+                const appIdMatch = content.match(/"appid"\s+"(\d+)"/);
+                const nameMatch = content.match(/"name"\s+"([^"]+)"/);
+                const installDirMatch = content.match(/"installdir"\s+"([^"]+)"/);
+                
+                if (appIdMatch && nameMatch) {
+                  games.push({
+                    appId: appIdMatch[1],
+                    name: nameMatch[1],
+                    installDir: installDirMatch ? installDirMatch[1] : "",
+                    library: library
+                  });
+                }
+              } catch {
+                // Skip files that can't be read
+              }
+            }
+          }
+        } catch {
+          // Skip libraries that can't be accessed
+        }
+      }
+      
+      // Sort games alphabetically
+      games.sort((a, b) => a.name.localeCompare(b.name));
+      
+      return jsonResponse({
+        success: true,
+        data: {
+          total: games.length,
+          games: games
+        }
+      });
+    }
+
     // Browse directory
     if (pathname === "/api/browse" && req.method === "POST") {
       const body = await req.json();
