@@ -125,16 +125,9 @@ async function scanInstalledGames() {
     const total = result.data.total;
     if (total === 0) {
       showMessage('No Steam games found. Please install games through Steam first.', 'warning');
-    } else if (total <= 10) {
-      // Show all game names if 10 or fewer
-      const gameList = result.data.games.map(g => g.name).join(', ');
-      const msg = `Found ${total} installed game${total === 1 ? '' : 's'}: ${gameList}`;
-      showMessage(msg, 'success');
     } else {
-      // Show count and first few games if more than 10
-      const firstGames = result.data.games.slice(0, 5).map(g => g.name).join(', ');
-      const msg = `Found ${total} installed Steam games! Including: ${firstGames}, and ${total - 5} more...`;
-      showMessage(msg, 'success');
+      // Show games in a scrollable popup
+      showGamesPopup(result.data.games);
     }
   } else {
     showMessage(`Error scanning games: ${result.error}`, 'error');
@@ -269,6 +262,117 @@ function exitToDOS() {
   };
   
   document.addEventListener('keydown', restartHandler);
+}
+
+function showGamesPopup(games) {
+  const popupWidth = 60;
+  const popupHeight = 15;
+  const popupX = Math.floor((CGA.cols - popupWidth) / 2);
+  const popupY = Math.floor((CGA.rows - popupHeight) / 2);
+  
+  let scrollOffset = 0;
+  let selectedIndex = 0;
+  const visibleItems = popupHeight - 6; // Account for borders and title
+  
+  const drawPopup = () => {
+    // Save current screen
+    if (window.currentMenu) {
+      window.currentMenu.draw();
+    }
+    
+    // Draw popup box
+    fillBox(popupX, popupY, popupWidth, popupHeight);
+    drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
+    
+    // Title
+    const title = `INSTALLED GAMES (${games.length} Total)`;
+    putText(popupX + Math.floor((popupWidth - title.length) / 2), popupY + 1, title, 'magenta');
+    putText(popupX + 1, popupY + 2, "─".repeat(popupWidth - 2), 'cyan');
+    
+    // Draw visible games
+    const endIndex = Math.min(scrollOffset + visibleItems, games.length);
+    for (let i = scrollOffset; i < endIndex; i++) {
+      const y = popupY + 3 + (i - scrollOffset);
+      const game = games[i];
+      const isSelected = i === selectedIndex;
+      
+      // Format game name (truncate if too long)
+      let displayName = game.name;
+      if (displayName.length > popupWidth - 6) {
+        displayName = displayName.substring(0, popupWidth - 9) + "...";
+      }
+      
+      if (isSelected) {
+        putText(popupX + 2, y, "> " + displayName, 'magenta');
+      } else {
+        putText(popupX + 4, y, displayName, 'white');
+      }
+    }
+    
+    // Scroll indicators
+    if (scrollOffset > 0) {
+      putText(popupX + popupWidth - 3, popupY + 3, "▲", 'cyan');
+    }
+    if (scrollOffset + visibleItems < games.length) {
+      putText(popupX + popupWidth - 3, popupY + popupHeight - 3, "▼", 'cyan');
+    }
+    
+    // Help text
+    putText(popupX + 1, popupY + popupHeight - 2, "─".repeat(popupWidth - 2), 'cyan');
+    const helpText = "↑↓: Scroll | ESC: Close | ENTER: Create Shortcut";
+    putText(popupX + Math.floor((popupWidth - helpText.length) / 2), popupY + popupHeight - 1, helpText, 'white');
+    
+    flush();
+  };
+  
+  const handlePopupKey = (e) => {
+    e.preventDefault();
+    
+    if (e.key === 'Escape') {
+      // Close popup and restore menu
+      document.removeEventListener('keydown', handlePopupKey);
+      if (window.currentMenu) {
+        window.currentMenu.draw();
+        // Re-attach menu event handler
+        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (selectedIndex > 0) {
+        selectedIndex--;
+        // Adjust scroll if needed
+        if (selectedIndex < scrollOffset) {
+          scrollOffset = selectedIndex;
+        }
+        drawPopup();
+      }
+    } else if (e.key === 'ArrowDown') {
+      if (selectedIndex < games.length - 1) {
+        selectedIndex++;
+        // Adjust scroll if needed
+        if (selectedIndex >= scrollOffset + visibleItems) {
+          scrollOffset = selectedIndex - visibleItems + 1;
+        }
+        drawPopup();
+      }
+    } else if (e.key === 'Enter') {
+      // Create shortcut for selected game
+      const game = games[selectedIndex];
+      showMessage(`Creating shortcut for ${game.name} (AppID: ${game.appId})...`, 'info');
+      
+      // Close popup
+      document.removeEventListener('keydown', handlePopupKey);
+      if (window.currentMenu) {
+        window.currentMenu.draw();
+        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
+      }
+    }
+  };
+  
+  // Remove menu handler temporarily and add popup handler
+  document.removeEventListener('keydown', window.currentMenu.handleKey);
+  document.addEventListener('keydown', handlePopupKey);
+  
+  drawPopup();
 }
 
 async function shutdownSequence() {
