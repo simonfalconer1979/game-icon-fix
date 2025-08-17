@@ -63,6 +63,23 @@ async function handleAPI(req: Request, pathname: string): Promise<Response> {
       }
     }
 
+    // Get Steam libraries
+    if (pathname === "/api/steam/libraries") {
+      const steamInfo = await SteamDetector.detect();
+      
+      if (steamInfo) {
+        return jsonResponse({
+          success: true,
+          data: steamInfo.libraries
+        });
+      } else {
+        return jsonResponse({
+          success: false,
+          error: "Steam not found"
+        }, 404);
+      }
+    }
+
     // Get desktop shortcuts
     if (pathname === "/api/shortcuts/desktop") {
       const desktopPath = join(Deno.env.get("USERPROFILE") || "", "Desktop");

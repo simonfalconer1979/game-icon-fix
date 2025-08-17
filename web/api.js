@@ -105,4 +105,18 @@ export class IconFixerAPI {
       return { success: false, error: error.message };
     }
   }
+
+  /**
+   * Get list of Steam libraries
+   */
+  static async getLibraries() {
+    try {
+      const response = await fetch(`${API_BASE}/steam/libraries`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get libraries:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }

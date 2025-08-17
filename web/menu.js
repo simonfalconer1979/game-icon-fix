@@ -139,8 +139,14 @@ async function detectSteam() {
   const result = await IconFixerAPI.detectSteam();
   
   if (result.success) {
-    const msg = `Steam successfully detected! Installation path: ${result.data.installPath}. Found ${result.data.libraries} Steam libraries configured. User ID: ${result.data.userId}`;
-    showMessage(msg, 'success');
+    // Get detailed library info
+    const librariesResult = await IconFixerAPI.getLibraries();
+    if (librariesResult.success) {
+      showLibrariesPopup(result.data, librariesResult.data);
+    } else {
+      const msg = `Steam successfully detected! Installation path: ${result.data.installPath}. Found ${result.data.libraries} Steam libraries configured. User ID: ${result.data.userId}`;
+      showMessage(msg, 'success');
+    }
   } else {
     showMessage(`Steam not found: ${result.error}. Please ensure Steam is installed and has been run at least once.`, 'error');
   }
@@ -262,6 +268,83 @@ function exitToDOS() {
   };
   
   document.addEventListener('keydown', restartHandler);
+}
+
+function showLibrariesPopup(steamInfo, libraries) {
+  const popupWidth = 70;
+  const popupHeight = 12 + Math.min(libraries.length, 5); // Adjust height based on libraries
+  const popupX = Math.floor((CGA.cols - popupWidth) / 2);
+  const popupY = Math.floor((CGA.rows - popupHeight) / 2);
+  
+  const drawPopup = () => {
+    // Save current screen
+    if (window.currentMenu) {
+      window.currentMenu.draw();
+    }
+    
+    // Draw popup box
+    fillBox(popupX, popupY, popupWidth, popupHeight);
+    drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
+    
+    // Title
+    const title = "STEAM INSTALLATION DETECTED";
+    putText(popupX + Math.floor((popupWidth - title.length) / 2), popupY + 1, title, 'magenta');
+    putText(popupX + 1, popupY + 2, "─".repeat(popupWidth - 2), 'cyan');
+    
+    // Steam info
+    putText(popupX + 2, popupY + 4, `Main Path: ${steamInfo.installPath}`, 'white');
+    putText(popupX + 2, popupY + 5, `User ID: ${steamInfo.userId}`, 'white');
+    putText(popupX + 2, popupY + 6, `Libraries Found: ${steamInfo.libraries}`, 'white');
+    
+    putText(popupX + 1, popupY + 7, "─".repeat(popupWidth - 2), 'cyan');
+    
+    // Library paths
+    putText(popupX + 2, popupY + 8, "Library Paths:", 'magenta');
+    for (let i = 0; i < Math.min(libraries.length, 5); i++) {
+      const lib = libraries[i];
+      let pathDisplay = `  ${i + 1}. ${lib.path}`;
+      if (lib.label) {
+        pathDisplay += ` (${lib.label})`;
+      }
+      // Truncate if too long
+      if (pathDisplay.length > popupWidth - 4) {
+        pathDisplay = pathDisplay.substring(0, popupWidth - 7) + "...";
+      }
+      putText(popupX + 2, popupY + 9 + i, pathDisplay, 'white');
+    }
+    
+    if (libraries.length > 5) {
+      putText(popupX + 2, popupY + 14, `  ... and ${libraries.length - 5} more`, 'cyan');
+    }
+    
+    // Close button
+    putText(popupX + 1, popupY + popupHeight - 2, "─".repeat(popupWidth - 2), 'cyan');
+    const closeText = "[ Press ESC or ENTER to close ]";
+    putText(popupX + Math.floor((popupWidth - closeText.length) / 2), popupY + popupHeight - 1, closeText, 'white');
+    
+    flush();
+  };
+  
+  const handlePopupKey = (e) => {
+    e.preventDefault();
+    
+    if (e.key === 'Escape' || e.key === 'Enter') {
+      // Close popup and restore menu
+      document.removeEventListener('keydown', handlePopupKey);
+      if (window.currentMenu) {
+        window.currentMenu.draw();
+        // Re-attach menu event handler
+        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
+      }
+      showMessage(`Steam ready: ${steamInfo.libraries} libraries configured`, 'success');
+    }
+  };
+  
+  // Remove menu handler temporarily and add popup handler
+  document.removeEventListener('keydown', window.currentMenu.handleKey);
+  document.addEventListener('keydown', handlePopupKey);
+  
+  drawPopup();
 }
 
 function showGamesPopup(games) {
