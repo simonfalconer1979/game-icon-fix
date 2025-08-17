@@ -85,6 +85,7 @@ export function showTopMenu() {
     { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'exit', label: 'Exit', action: () => exitToDOS() },
+    { id: 'shutdown', label: 'Shutdown', action: () => shutdownSequence() },
   ]);
   window.currentMenu = menu;
   menu.draw();
@@ -219,4 +220,75 @@ function exitToDOS() {
   };
   
   document.addEventListener('keydown', restartHandler);
+}
+
+async function shutdownSequence() {
+  clearScreen();
+  
+  // Start shutdown sequence
+  putText(1, 0, "C:\\GAMES\\ICONFIXER>shutdown /s /t 0", 'white');
+  flush();
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  putText(1, 2, "System is shutting down...", 'cyan');
+  flush();
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Show shutdown messages
+  const messages = [
+    "Closing all applications...",
+    "Saving system settings...",
+    "Stopping services...",
+    "Flushing disk cache...",
+    "Power off sequence initiated..."
+  ];
+  
+  for (let i = 0; i < messages.length; i++) {
+    putText(3, 4 + i, messages[i], 'white');
+    flush();
+    await new Promise(resolve => setTimeout(resolve, 600));
+  }
+  
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Final message
+  putText(1, 11, "It is now safe to turn off your computer.", 'cyan');
+  putText(1, 12, "_", 'white');
+  flush();
+  
+  // Blinking cursor for a moment
+  let blinks = 0;
+  const blinkInterval = setInterval(() => {
+    const cursor = blinks % 2 === 0 ? "_" : " ";
+    putText(1, 12, cursor, 'white');
+    flush();
+    blinks++;
+    
+    if (blinks > 6) {
+      clearInterval(blinkInterval);
+      
+      // Fade to black effect
+      setTimeout(() => {
+        clearScreen();
+        flush();
+        
+        // Show final message before closing
+        putText(30, 12, "Goodbye!", 'cyan');
+        flush();
+        
+        // Close the browser window after a short delay
+        setTimeout(() => {
+          window.close();
+          // If window.close() doesn't work (due to browser security), show a message
+          setTimeout(() => {
+            clearScreen();
+            putText(20, 12, "You can now close this window.", 'cyan');
+            flush();
+          }, 500);
+        }, 1500);
+      }, 1000);
+    }
+  }, 400);
 }
