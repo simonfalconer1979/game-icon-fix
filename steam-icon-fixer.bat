@@ -33,16 +33,16 @@ echo   ║                   Fix Steam Desktop Icons                    ║
 echo   ║                                                               ║
 echo   ╚═══════════════════════════════════════════════════════════════╝
 echo.
-echo   Starting web server at: http://127.0.0.1:5173
+echo   Starting web server at: http://localhost:5173
 echo.
 echo   Opening browser...
-start "" http://127.0.0.1:5173
+start "" http://localhost:5173
 echo.
 echo   ──────────────────────────────────────────────────────────────
 echo   Press Ctrl+C to stop the server and exit
 echo   ──────────────────────────────────────────────────────────────
 echo.
-deno run -A https://deno.land/std@0.224.0/http/file_server.ts ./web --port 5173 --cors
+deno run -N -R -W --allow-run --allow-env web_server.ts
 echo.
 echo   Server stopped.
 echo.
