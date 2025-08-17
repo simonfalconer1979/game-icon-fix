@@ -14,7 +14,7 @@ export class Menu {
 
   draw() {
     clearScreen();
-    this.drawToBuffer();
+    this.drawContent();
     flush();
   }
 
