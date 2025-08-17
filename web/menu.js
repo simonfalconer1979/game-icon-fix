@@ -40,17 +40,17 @@ export class Menu {
       putText(itemX, menuY + 3 + i, text, color);
     }
     
-    // Status message bar (moved up 8 lines)
-    putText(0, CGA.rows - 13, "=".repeat(CGA.cols), 'white');
+    // Status message bar (moved up 6 lines from original)
+    putText(0, CGA.rows - 11, "=".repeat(CGA.cols), 'white');
     if (statusMessage) {
       const msgX = Math.floor((CGA.cols - statusMessage.length) / 2);
-      putText(msgX, CGA.rows - 12, statusMessage, statusColor);
+      putText(msgX, CGA.rows - 10, statusMessage, statusColor);
     }
     
-    // Help text at bottom (moved up 8 lines)
-    putText(0, CGA.rows - 10, "-".repeat(CGA.cols), 'white');
+    // Help text at bottom (moved up 6 lines from original)
+    putText(0, CGA.rows - 8, "-".repeat(CGA.cols), 'white');
     const helpText = "UP/DOWN: Navigate | ENTER: Select | ESC: Exit";
-    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 9, helpText, 'white');
+    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 7, helpText, 'white');
     
     flush();
   }
