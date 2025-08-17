@@ -1,4 +1,4 @@
-import { clearScreen, drawStatusBar } from './ui.js';
+import { clearScreen } from './ui.js';
 import { showTopMenu } from './menu.js';
 
 let activeController = null;
@@ -10,7 +10,6 @@ function setController(ctrl) {
 
 function boot() {
   clearScreen();
-  drawStatusBar(' F1=Help  ESC=Back');
   const menu = showTopMenu();
   setController(menu);
 

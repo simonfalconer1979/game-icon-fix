@@ -25,46 +25,62 @@ html,body{
   justify-content: center;
 }
 
-/* CRT Monitor Frame */
+/* CRT Monitor Frame - Authentic 1990s 4:3 */
 .monitor-frame {
   position: relative;
   padding: 20px;
-  transform: scale(0.75);
+  transform: scale(0.9);
   transform-origin: center;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .monitor-bezel {
   background: linear-gradient(145deg, #e6e2da, #c5c1ba);
-  border-radius: 25px;
-  padding: 40px;
+  border-radius: 30px;
+  padding: 50px 60px 60px 60px;
   box-shadow: 
-    0 20px 40px rgba(0,0,0,0.5),
-    inset 0 2px 3px rgba(255,255,255,0.5),
-    inset 0 -2px 3px rgba(0,0,0,0.3);
+    0 30px 60px rgba(0,0,0,0.6),
+    inset 0 2px 4px rgba(255,255,255,0.6),
+    inset 0 -3px 5px rgba(0,0,0,0.4);
   position: relative;
+  /* Make it chunky and deep like old CRTs */
+  background-image: 
+    linear-gradient(145deg, #e6e2da, #c5c1ba),
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), transparent);
 }
 
 .monitor-screen {
   position: relative;
   background: #000;
-  border-radius: 10px;
+  border-radius: 15px;
   overflow: hidden;
+  /* 4:3 aspect ratio */
+  width: 640px;
+  height: 480px;
   box-shadow: 
-    inset 0 0 20px rgba(0,0,0,0.8),
-    inset 0 0 40px rgba(0,0,0,0.5);
+    inset 0 0 30px rgba(0,0,0,0.9),
+    inset 0 0 60px rgba(0,0,0,0.7),
+    inset 0 2px 10px rgba(0,0,0,1);
+  /* Screen glass effect */
+  background: linear-gradient(135deg, 
+    rgba(0,0,0,0.95) 0%, 
+    rgba(0,0,0,1) 50%, 
+    rgba(0,0,0,0.98) 100%);
 }
 
 /* Monitor brand label */
 .monitor-brand {
   position: absolute;
-  bottom: 15px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
   font-family: Arial, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
 }
 
 /* Monitor control buttons */
@@ -128,14 +144,29 @@ html,body{
   50% { opacity: 1; }
 }
 
-/* Monitor stand */
+/* Monitor stand - Chunky 1990s style */
 .monitor-stand {
-  width: 150px;
-  height: 100px;
+  width: 200px;
+  height: 80px;
   background: linear-gradient(145deg, #d4d0c8, #a8a49e);
-  margin: -10px auto 0;
-  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  margin: -5px auto 0;
+  clip-path: polygon(25% 0%, 75% 0%, 90% 100%, 10% 100%);
+  box-shadow: 
+    0 15px 30px rgba(0,0,0,0.4),
+    inset 0 -2px 5px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.monitor-stand::before {
+  content: "";
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 30px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 50%;
 }
 
 /* CRT Screen Effects */
@@ -149,24 +180,27 @@ html,body{
   justify-content: center;
 }
 
-/* Fixed SVGA 160x64 text grid */
+/* CGA 80x25 text mode - Fits in 4:3 screen */
 .screen{
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   white-space: pre;
-  letter-spacing: 0px;
-  line-height: 1.0;
-  font-size: 20px;
+  font-family: "VT323", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.15;
+  letter-spacing: 0;
   background: transparent;
   color: var(--text);
-  width: 160ch;
-  height: calc(64 * 1em);
-  padding: 0;
+  width: fit-content;
+  height: fit-content;
+  padding: 20px;
   overflow: hidden;
   text-shadow: 
-    0 0 3px var(--phosphor-glow),
-    0 0 6px var(--phosphor-glow),
-    0 0 12px var(--phosphor-glow);
-  animation: text-flicker 0.1s infinite;
+    0 0 2px var(--phosphor-glow),
+    0 0 5px var(--phosphor-glow);
+  animation: text-flicker 0.15s infinite;
   z-index: 10;
 }
 
@@ -320,26 +354,26 @@ html,body{
   z-index: 10;
 }
 
-/* Responsive scaling */
-@media (max-width: 1600px) {
-  .monitor-frame {
-    transform: scale(0.65);
-  }
-}
-
-@media (max-width: 1400px) {
-  .monitor-frame {
-    transform: scale(0.55);
-  }
-}
-
+/* Responsive scaling for 4:3 monitor */
 @media (max-width: 1200px) {
+  .monitor-frame {
+    transform: scale(0.75);
+  }
+}
+
+@media (max-width: 1000px) {
+  .monitor-frame {
+    transform: scale(0.6);
+  }
+}
+
+@media (max-width: 800px) {
   .monitor-frame {
     transform: scale(0.45);
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 600px) {
   .monitor-frame {
     transform: scale(0.35);
   }
