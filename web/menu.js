@@ -81,9 +81,7 @@ export class Menu {
 
 export function showTopMenu() {
   const menu = new Menu('MAIN MENU', [
-    { id: 'fix-current', label: 'Fix Icons in Current Directory', action: () => fixCurrentDirectory() },
     { id: 'fix-desktop', label: 'Fix Icons on Desktop', action: () => fixDesktopIcons() },
-    { id: 'browse', label: 'Browse for Directory...', action: () => browseDirectory() },
     { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'exit', label: 'Exit', action: () => showMessage('Thanks for using Icon Fixer!') },
@@ -134,14 +132,6 @@ async function fixDesktopIcons() {
   } else {
     showMessage(`Error: ${result.error}`, 'error');
   }
-}
-
-async function fixCurrentDirectory() {
-  showMessage('This requires selecting a directory first', 'info');
-}
-
-async function browseDirectory() {
-  showMessage('Directory browser not yet implemented', 'info');
 }
 
 async function replaceAllShortcuts() {
