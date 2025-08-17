@@ -101,10 +101,10 @@ export class Menu {
 
 export function showTopMenu() {
   const menu = new Menu('MAIN MENU', [
+    { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'scan-games', label: 'Scan for Installed Games', action: () => scanInstalledGames() },
     { id: 'fix-desktop', label: 'Fix Icons on Desktop', action: () => fixDesktopIcons() },
     { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
-    { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'exit', label: 'Exit', action: () => exitToDOS() },
     { id: 'shutdown', label: 'Shutdown', action: () => shutdownSequence() },
   ]);

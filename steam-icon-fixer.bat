@@ -33,10 +33,10 @@ echo   ║                   Fix Steam Desktop Icons                    ║
 echo   ║                                                               ║
 echo   ╚═══════════════════════════════════════════════════════════════╝
 echo.
-echo   Starting web server at: http://localhost:5173
+echo   Starting web server at: http://localhost:5174
 echo.
 echo   Opening browser...
-start "" http://localhost:5173
+start "" http://localhost:5174
 echo.
 echo   ──────────────────────────────────────────────────────────────
 echo   Press Ctrl+C to stop the server and exit

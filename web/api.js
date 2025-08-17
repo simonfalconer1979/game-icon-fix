@@ -2,7 +2,7 @@
  * API client for communicating with the backend server
  */
 
-const API_BASE = 'http://localhost:5173/api';
+const API_BASE = 'http://localhost:5174/api';
 
 export class IconFixerAPI {
   /**

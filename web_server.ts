@@ -9,7 +9,7 @@ import { SteamDetector } from "./steam_detector.ts";
 import { WebIconProcessor } from "./web_processor.ts";
 import { join } from "@std/path";
 
-const PORT = 5173;
+const PORT = 5174;
 
 // CORS headers for development
 const corsHeaders = {
@@ -177,7 +177,7 @@ async function handleAPI(req: Request, pathname: string): Promise<Response> {
       // Parse Steam library folders
       for (const library of steamInfo.libraries) {
         try {
-          const steamappsPath = join(library, "steamapps");
+          const steamappsPath = join(library.path, "steamapps");
           
           // Read appmanifest files
           for await (const entry of Deno.readDir(steamappsPath)) {
@@ -196,7 +196,7 @@ async function handleAPI(req: Request, pathname: string): Promise<Response> {
                     appId: appIdMatch[1],
                     name: nameMatch[1],
                     installDir: installDirMatch ? installDirMatch[1] : "",
-                    library: library
+                    library: library.path
                   });
                 }
               } catch {
