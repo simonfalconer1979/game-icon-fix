@@ -1,16 +1,22 @@
 :root{
-  --bg: #000000;
+  /* CGA Palette 0 Colors */
+  --cga-black: #000000;
+  --cga-cyan: #00AAAA;
+  --cga-magenta: #AA00AA;
+  --cga-white: #FFFFFF;
+  
+  /* Monitor hardware colors */
   --monitor-bezel: #d4d0c8;
   --monitor-dark: #8b8680;
-  --screen-bg: #001b2e;
-  --win-bg: #002b4a;
-  --menu-bar: #003b66;
-  --text: #00ff41;
-  --text-dim: #00aa2a;
-  --accent: #00ff41;
-  --shadow: rgba(0,0,0,0.5);
-  --status-bg: #003b66;
-  --phosphor-glow: #00ff4180;
+  
+  /* Applied CGA palette */
+  --bg: var(--cga-black);
+  --screen-bg: var(--cga-black);
+  --text: var(--cga-cyan);
+  --text-bright: var(--cga-white);
+  --accent: var(--cga-magenta);
+  --shadow: rgba(0,0,0,0.8);
+  --phosphor-glow: #00AAAA80;
 }
 
 html,body{
@@ -202,6 +208,32 @@ html,body{
     0 0 5px var(--phosphor-glow);
   animation: text-flicker 0.15s infinite;
   z-index: 10;
+}
+
+/* CGA Palette 0 color classes */
+.cga-cyan {
+  color: #00AAAA;
+  text-shadow: 
+    0 0 2px #00AAAA80,
+    0 0 5px #00AAAA40;
+}
+
+.cga-magenta {
+  color: #AA00AA;
+  text-shadow: 
+    0 0 2px #AA00AA80,
+    0 0 5px #AA00AA40;
+}
+
+.cga-white {
+  color: #FFFFFF;
+  text-shadow: 
+    0 0 2px #FFFFFF80,
+    0 0 5px #FFFFFF40;
+}
+
+.cga-black {
+  color: #000000;
 }
 
 /* CRT curvature effect */

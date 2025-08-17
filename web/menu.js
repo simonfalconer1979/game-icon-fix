@@ -10,34 +10,43 @@ export class Menu {
   draw() {
     clearScreen();
     
-    // Simple title at top
-    const titleLine = "=== STEAM ICON FIXER v3.0 ===";
-    putText(Math.floor((CGA.cols - titleLine.length) / 2), 1, titleLine);
-    putText(Math.floor((CGA.cols - 30) / 2), 2, "Fix Your Steam Desktop Icons");
+    // Title in MAGENTA
+    const titleLine1 = "╔════════════════════════════════╗";
+    const titleLine2 = "║    STEAM ICON FIXER v3.0       ║";
+    const titleLine3 = "║    Fix Your Desktop Icons      ║";
+    const titleLine4 = "╚════════════════════════════════╝";
     
-    // Draw menu box
+    const titleX = Math.floor((CGA.cols - titleLine1.length) / 2);
+    putText(titleX, 1, titleLine1, 'magenta');
+    putText(titleX, 2, titleLine2, 'magenta');
+    putText(titleX, 3, titleLine3, 'cyan');
+    putText(titleX, 4, titleLine4, 'magenta');
+    
+    // Draw menu box in WHITE
     const menuWidth = 50;
     const menuHeight = this.items.length + 4;
     const menuX = Math.floor((CGA.cols - menuWidth) / 2);
-    const menuY = 5;
+    const menuY = 7;
     
     // Clear area and draw box
     fillBox(menuX, menuY, menuWidth, menuHeight);
-    drawBox(menuX, menuY, menuWidth, menuHeight);
+    drawBox(menuX, menuY, menuWidth, menuHeight, 'white');
     
-    // Menu title
-    putText(menuX + 2, menuY + 1, centerText(this.title, menuWidth - 4));
+    // Menu title in WHITE
+    putText(menuX + 2, menuY + 1, centerText(this.title, menuWidth - 4), 'white');
     
-    // Menu items
+    // Menu items - selected in MAGENTA, others in CYAN
     for (let i = 0; i < this.items.length; i++) {
-      const prefix = (i === this.index) ? "> " : "  ";
+      const isSelected = (i === this.index);
+      const prefix = isSelected ? "► " : "  ";
       const text = prefix + this.items[i].label;
-      putText(menuX + 2, menuY + 2 + i, text);
+      const color = isSelected ? 'magenta' : 'cyan';
+      putText(menuX + 2, menuY + 2 + i, text, color);
     }
     
-    // Help text at bottom
-    const helpText = "[UP/DOWN] Navigate  [ENTER] Select  [ESC] Exit";
-    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 2, helpText);
+    // Help text at bottom in WHITE
+    const helpText = "[↑↓] Navigate  [ENTER] Select  [ESC] Exit";
+    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 2, helpText, 'white');
     
     flush();
   }
@@ -85,8 +94,8 @@ function showMessage(msg) {
   const msgY = Math.floor(CGA.rows / 2);
   
   fillBox(msgX - 1, msgY - 1, msgWidth + 2, 3);
-  drawBox(msgX - 1, msgY - 1, msgWidth + 2, 3);
-  putText(msgX, msgY, " " + msg + " ");
+  drawBox(msgX - 1, msgY - 1, msgWidth + 2, 3, 'magenta');
+  putText(msgX, msgY, " " + msg + " ", 'white');
   flush();
   
   setTimeout(() => {
