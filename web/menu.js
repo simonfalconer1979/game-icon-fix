@@ -282,8 +282,10 @@ function showLibrariesPopup(steamInfo, libraries) {
       window.currentMenu.draw();
     }
     
+    // Clear popup area with spaces first
+    fillBox(popupX, popupY, popupWidth, popupHeight, " ");
+    
     // Draw popup box
-    fillBox(popupX, popupY, popupWidth, popupHeight);
     drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
     
     // Title
@@ -373,8 +375,10 @@ function showGamesPopup(games) {
       window.currentMenu.draw();
     }
     
+    // Clear popup area with spaces first
+    fillBox(popupX, popupY, popupWidth, popupHeight, " ");
+    
     // Draw popup box
-    fillBox(popupX, popupY, popupWidth, popupHeight);
     drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
     
     // Title
@@ -395,11 +399,20 @@ function showGamesPopup(games) {
         displayName = displayName.substring(0, popupWidth - 9) + "...";
       }
       
+      // Clear the entire line first with spaces
+      putText(popupX + 2, y, " ".repeat(popupWidth - 4), 'white');
+      
       if (isSelected) {
         putText(popupX + 2, y, "> " + displayName, 'magenta');
       } else {
         putText(popupX + 4, y, displayName, 'white');
       }
+    }
+    
+    // Clear any remaining lines in the visible area
+    for (let i = endIndex; i < scrollOffset + visibleItems; i++) {
+      const y = popupY + 3 + (i - scrollOffset);
+      putText(popupX + 2, y, " ".repeat(popupWidth - 4), 'white');
     }
     
     // Scroll indicators
