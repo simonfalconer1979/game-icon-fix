@@ -1,6 +1,10 @@
 import { clearScreen, drawBox, fillBox, putText, centerText, drawCenteredBox, flush, CGA } from './ui.js';
 import { IconFixerAPI } from './api.js';
 
+let statusMessage = '';
+let statusColor = 'white';
+let statusTimeout = null;
+
 export class Menu {
   constructor(title, items) {
     this.title = title;
@@ -36,10 +40,17 @@ export class Menu {
       putText(itemX, menuY + 3 + i, text, color);
     }
     
+    // Status message bar (2 lines from bottom)
+    putText(0, CGA.rows - 4, "=".repeat(CGA.cols), 'white');
+    if (statusMessage) {
+      const msgX = Math.floor((CGA.cols - statusMessage.length) / 2);
+      putText(msgX, CGA.rows - 3, statusMessage, statusColor);
+    }
+    
     // Help text at bottom in WHITE
-    putText(0, CGA.rows - 3, "=".repeat(CGA.cols), 'white');
+    putText(0, CGA.rows - 2, "-".repeat(CGA.cols), 'white');
     const helpText = "UP/DOWN: Navigate | ENTER: Select | ESC: Exit";
-    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 2, helpText, 'white');
+    putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 1, helpText, 'white');
     
     flush();
   }
@@ -77,6 +88,7 @@ export function showTopMenu() {
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'exit', label: 'Exit', action: () => showMessage('Thanks for using Icon Fixer!') },
   ]);
+  window.currentMenu = menu;
   menu.draw();
   return menu;
 }
@@ -86,7 +98,8 @@ async function detectSteam() {
   const result = await IconFixerAPI.detectSteam();
   
   if (result.success) {
-    showMessage(`Steam found at: ${result.data.installPath}`);
+    const msg = `Steam found: ${result.data.installPath} (${result.data.libraries} libraries)`;
+    showMessage(msg, 'success');
   } else {
     showMessage(`Steam not found: ${result.error}`, 'error');
   }
@@ -109,11 +122,14 @@ async function fixDesktopIcons() {
   
   showProgress(`Found ${shortcuts.data.length} shortcuts. Fixing icons...`);
   
+  // Add a small delay to show the progress message
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   // Fix the icons
   const result = await IconFixerAPI.fixDesktopIcons();
   
   if (result.success) {
-    const msg = `Fixed ${result.data.successful} of ${result.data.total} icons`;
+    const msg = `SUCCESS: Fixed ${result.data.successful} of ${result.data.total} icons (${result.data.failed} failed)`;
     showMessage(msg, 'success');
   } else {
     showMessage(`Error: ${result.error}`, 'error');
@@ -142,40 +158,38 @@ async function replaceAllShortcuts() {
   }
 }
 
+function setStatus(msg, color = 'white', duration = 0) {
+  statusMessage = msg;
+  statusColor = color;
+  
+  if (statusTimeout) {
+    clearTimeout(statusTimeout);
+    statusTimeout = null;
+  }
+  
+  if (duration > 0) {
+    statusTimeout = setTimeout(() => {
+      statusMessage = '';
+      if (window.currentMenu) {
+        window.currentMenu.draw();
+      }
+    }, duration);
+  }
+  
+  if (window.currentMenu) {
+    window.currentMenu.draw();
+  }
+}
+
 function showProgress(msg) {
-  clearScreen();
-  
-  const progressY = Math.floor(CGA.rows / 2) - 2;
-  const progressX = Math.floor((CGA.cols - msg.length) / 2);
-  
-  putText(progressX, progressY, msg, 'cyan');
-  putText(Math.floor((CGA.cols - 40) / 2), progressY + 2, "========================================", 'white');
-  putText(Math.floor((CGA.cols - 15) / 2), progressY + 4, "Please wait...", 'magenta');
-  
-  flush();
+  setStatus(msg, 'cyan');
 }
 
 function showMessage(msg, type = 'info') {
-  const msgWidth = Math.min(msg.length + 4, 70);
-  const msgX = Math.floor((CGA.cols - msgWidth) / 2);
-  const msgY = Math.floor(CGA.rows / 2);
-  
   // Choose color based on type
-  const boxColor = type === 'error' ? 'magenta' : 
-                   type === 'success' ? 'cyan' : 
-                   type === 'warning' ? 'white' : 'cyan';
+  const color = type === 'error' ? 'magenta' : 
+                type === 'success' ? 'cyan' : 
+                type === 'warning' ? 'white' : 'cyan';
   
-  fillBox(msgX - 1, msgY - 1, msgWidth + 2, 3);
-  drawBox(msgX - 1, msgY - 1, msgWidth + 2, 3, boxColor);
-  
-  // Truncate message if too long
-  const displayMsg = msg.length > msgWidth - 2 ? 
-    msg.substring(0, msgWidth - 5) + "..." : msg;
-  
-  putText(msgX, msgY, " " + displayMsg + " ", 'white');
-  flush();
-  
-  setTimeout(() => {
-    showTopMenu();
-  }, 3000);
+  setStatus(msg, color, 3000);
 }
