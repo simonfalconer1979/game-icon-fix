@@ -1,14 +1,13 @@
 @echo off
 chcp 65001 >nul 2>&1
-setlocal enabledelayedexpansion
 title Game Icon Fixer - Web App
 
 :: Web launcher for Game Icon Fixer
-:: Version: 3.0.0 (Web-only)
+:: Version: 3.0.1 (Web-only)
 
 :: Check for Deno
 where deno >nul 2>&1
-if !errorlevel! neq 0 (
+if errorlevel 1 (
   color 0C
   echo.
   echo  ╔═══════════════════════════════════════════════════════════════╗
@@ -16,8 +15,8 @@ if !errorlevel! neq 0 (
   echo  ╚═══════════════════════════════════════════════════════════════╝
   echo.
   echo  Install Deno from: https://deno.land
-  echo  Quick install (PowerShell as Admin):
-  echo    irm https://deno.land/install.ps1 ^| iex
+  echo  Quick install - Run PowerShell as Admin:
+  echo    irm https://deno.land/install.ps1 -useb ^| iex
   echo.
   pause
   exit /b 1

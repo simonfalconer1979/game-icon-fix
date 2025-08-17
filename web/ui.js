@@ -65,15 +65,84 @@ export function drawBoxWithShadow(x, y, width, height, title) {
   putText(x + 1, y + height, shadowChar.repeat(width));
 }
 
-export function drawCenteredBoxWithShadow(width, height, title) {
-  const { x, y } = getCenteredPosition(width, height);
+export function drawCenteredBoxWithShadow(width, height, title, customY) {
+  const x = Math.floor((SVGA.cols - width) / 2);
+  const y = customY !== undefined ? customY : Math.floor((SVGA.rows - height) / 2);
   drawBoxWithShadow(x, y, width, height, title);
   return { x, y, width, height };
 }
 
+export function drawProfessionalMenu(width, height, customY) {
+  const x = Math.floor((SVGA.cols - width) / 2);
+  const y = customY !== undefined ? customY : Math.floor((SVGA.rows - height) / 2);
+  
+  // Draw double-line border for premium 90s look
+  const dtl = "╔", dtr = "╗", dbl = "╚", dbr = "╝";
+  const dh = "═", dv = "║";
+  
+  // Top border
+  putText(x, y, dtl + dh.repeat(width - 2) + dtr);
+  
+  // Sides
+  for (let r = 1; r < height - 1; r++) {
+    putText(x, y + r, dv + " ".repeat(width - 2) + dv);
+  }
+  
+  // Bottom border
+  putText(x, y + height - 1, dbl + dh.repeat(width - 2) + dbr);
+  
+  // 3D shadow effect (classic 90s)
+  const shadowChar = "▓";
+  for (let r = 1; r < height; r++) {
+    putText(x + width, y + r, shadowChar);
+  }
+  putText(x + 2, y + height, shadowChar.repeat(width - 1));
+  
+  // Subtle inner shadow for depth
+  const innerShadow = "░";
+  for (let r = 1; r < 3; r++) {
+    putText(x + width - 2, y + r, innerShadow);
+  }
+  
+  return { x, y, width, height };
+}
+
 export function drawStatusBar(message) {
-  const el = document.getElementById("status-bar");
-  if (el) el.textContent = message;
+  // Draw a professional 90s status bar at the bottom
+  const barY = SVGA.rows - 3;
+  const barWidth = SVGA.cols;
+  
+  // Clear the status bar area
+  for (let i = 0; i < 3; i++) {
+    putText(0, barY + i, " ".repeat(barWidth));
+  }
+  
+  // Draw double-line separator
+  putText(0, barY, "╠" + "═".repeat(barWidth - 2) + "╣");
+  
+  // Status bar content
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const leftText = " Ready";
+  const centerMsg = "F1=Help  F10=Menu  Alt+X=Exit";
+  const rightText = `[${time}] `;
+  
+  // Calculate positions
+  const centerX = Math.floor((barWidth - centerMsg.length) / 2);
+  const rightX = barWidth - rightText.length;
+  
+  // Draw status items
+  putText(1, barY + 1, leftText);
+  putText(centerX, barY + 1, centerMsg);
+  putText(rightX, barY + 1, rightText);
+  
+  // Bottom border
+  putText(0, barY + 2, "╚" + "═".repeat(barWidth - 2) + "╝");
+  
+  // Update HTML status bar if message provided
+  if (message) {
+    const el = document.getElementById("status-bar");
+    if (el) el.textContent = message;
+  }
 }
 
 export function showCenteredStatus(type, message, y) {

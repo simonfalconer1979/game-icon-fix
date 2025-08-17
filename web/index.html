@@ -4,17 +4,36 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Steam Icon Fixer - SVGA Web</title>
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div id="svga-root">
-    <div id="screen" class="screen" role="application" aria-label="Steam Icon Fixer SVGA">
-      <!-- Content is rendered here by JS -->
+  <div class="monitor-frame">
+    <div class="monitor-bezel">
+      <div class="monitor-screen">
+        <div class="crt-effect"></div>
+        <div class="scanlines"></div>
+        <div id="svga-root">
+          <div id="screen" class="screen" role="application" aria-label="Steam Icon Fixer SVGA">
+            <!-- Content is rendered here by JS -->
+          </div>
+          <div id="status-bar" class="status-bar" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="monitor-brand">SVGA MONITOR 800x600</div>
+      <div class="monitor-controls">
+        <div class="control-button"></div>
+        <div class="control-button"></div>
+        <div class="control-button"></div>
+        <div class="control-button power-button" id="power-button" title="Power Off">
+          <div class="power-led"></div>
+        </div>
+      </div>
     </div>
-    <div id="status-bar" class="status-bar" aria-live="polite"></div>
+    <div class="monitor-stand"></div>
   </div>
   <script type="module" src="./main.js"></script>
 </body>
