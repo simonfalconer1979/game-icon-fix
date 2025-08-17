@@ -10,42 +10,34 @@ export class Menu {
   draw() {
     clearScreen();
     
-    // Title in MAGENTA
-    const titleLine1 = "╔════════════════════════════════╗";
-    const titleLine2 = "║    STEAM ICON FIXER v3.0       ║";
-    const titleLine3 = "║    Fix Your Desktop Icons      ║";
-    const titleLine4 = "╚════════════════════════════════╝";
+    // Simple ASCII title
+    const title = "STEAM ICON FIXER v3.0";
+    const subtitle = "Fix Your Desktop Icons";
     
-    const titleX = Math.floor((CGA.cols - titleLine1.length) / 2);
-    putText(titleX, 1, titleLine1, 'magenta');
-    putText(titleX, 2, titleLine2, 'magenta');
-    putText(titleX, 3, titleLine3, 'cyan');
-    putText(titleX, 4, titleLine4, 'magenta');
+    putText(Math.floor((CGA.cols - title.length) / 2), 2, title, 'magenta');
+    putText(Math.floor((CGA.cols - subtitle.length) / 2), 3, subtitle, 'cyan');
+    putText(0, 4, "=".repeat(CGA.cols), 'white');
     
-    // Draw menu box in WHITE
-    const menuWidth = 50;
-    const menuHeight = this.items.length + 4;
-    const menuX = Math.floor((CGA.cols - menuWidth) / 2);
+    // Draw menu - simpler layout
     const menuY = 7;
     
-    // Clear area and draw box
-    fillBox(menuX, menuY, menuWidth, menuHeight);
-    drawBox(menuX, menuY, menuWidth, menuHeight, 'white');
-    
-    // Menu title in WHITE
-    putText(menuX + 2, menuY + 1, centerText(this.title, menuWidth - 4), 'white');
+    // Menu title
+    putText(Math.floor((CGA.cols - this.title.length) / 2), menuY, this.title, 'white');
+    putText(Math.floor((CGA.cols - 40) / 2), menuY + 1, "----------------------------------------", 'white');
     
     // Menu items - selected in MAGENTA, others in CYAN
     for (let i = 0; i < this.items.length; i++) {
       const isSelected = (i === this.index);
-      const prefix = isSelected ? "► " : "  ";
+      const prefix = isSelected ? "> " : "  ";
       const text = prefix + this.items[i].label;
       const color = isSelected ? 'magenta' : 'cyan';
-      putText(menuX + 2, menuY + 2 + i, text, color);
+      const itemX = Math.floor((CGA.cols - 40) / 2);
+      putText(itemX, menuY + 3 + i, text, color);
     }
     
     // Help text at bottom in WHITE
-    const helpText = "[↑↓] Navigate  [ENTER] Select  [ESC] Exit";
+    putText(0, CGA.rows - 3, "=".repeat(CGA.cols), 'white');
+    const helpText = "UP/DOWN: Navigate | ENTER: Select | ESC: Exit";
     putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 2, helpText, 'white');
     
     flush();

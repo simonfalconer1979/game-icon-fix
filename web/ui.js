@@ -31,26 +31,37 @@ export function flush() {
       const row = buffer[y];
       const colors = colorBuffer[y];
       
-      if (colors.length === 0) {
-        html += row + '\n';
+      if (!colors || colors.length === 0) {
+        // Escape HTML characters
+        html += escapeHtml(row);
       } else {
         let result = row;
         let output = '';
         let lastPos = 0;
         
+        // Sort color spans by start position
+        colors.sort((a, b) => a.start - b.start);
+        
         // Apply color spans
         for (const span of colors) {
-          output += result.substring(lastPos, span.start);
-          const spanText = result.substring(span.start, span.end);
+          output += escapeHtml(result.substring(lastPos, span.start));
+          const spanText = escapeHtml(result.substring(span.start, span.end));
           output += `<span class="cga-${span.color}">${spanText}</span>`;
           lastPos = span.end;
         }
-        output += result.substring(lastPos);
-        html += output + '\n';
+        output += escapeHtml(result.substring(lastPos));
+        html += output;
       }
+      if (y < CGA.rows - 1) html += '\n';
     }
     screen.innerHTML = html;
   }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 export function putText(x, y, text, color = null) {
@@ -73,12 +84,12 @@ export function putText(x, y, text, color = null) {
 
 export function drawBox(x, y, width, height, color = null) {
   // Simple ASCII box using standard characters
-  const h = "═";
-  const v = "║";
-  const tl = "╔";
-  const tr = "╗";
-  const bl = "╚";
-  const br = "╝";
+  const h = "-";
+  const v = "|";
+  const tl = "+";
+  const tr = "+";
+  const bl = "+";
+  const br = "+";
   
   // Top
   putText(x, y, tl + h.repeat(width - 2) + tr, color);
