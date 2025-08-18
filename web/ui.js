@@ -8,6 +8,15 @@ let buffer;
 let colorBuffer;
 let backBuffer;
 let backColorBuffer;
+let useBackBuffer = false; // Track if we're drawing to back buffer
+
+// Initialize buffers on first use
+function initBuffers() {
+  if (!buffer) {
+    buffer = Array.from({ length: CGA.rows }, () => " ".repeat(CGA.cols));
+    colorBuffer = Array.from({ length: CGA.rows }, () => []);
+  }
+}
 
 // CGA Palette 0 color codes
 const CGA_COLORS = {
@@ -19,10 +28,9 @@ const CGA_COLORS = {
 };
 
 export function clearScreen(fill = " ") {
+  initBuffers(); // Ensure buffers exist
   buffer = Array.from({ length: CGA.rows }, () => fill.repeat(CGA.cols));
   colorBuffer = Array.from({ length: CGA.rows }, () => []);
-  backBuffer = Array.from({ length: CGA.rows }, () => fill.repeat(CGA.cols));
-  backColorBuffer = Array.from({ length: CGA.rows }, () => []);
   flush();
 }
 
@@ -37,10 +45,12 @@ export function beginDraw() {
     backBuffer[y] = " ".repeat(CGA.cols);
     backColorBuffer[y] = [];
   }
+  useBackBuffer = true; // Enable back buffer drawing
 }
 
 // End drawing and swap buffers
 export function endDraw() {
+  useBackBuffer = false; // Disable back buffer drawing
   if (backBuffer) {
     buffer = [...backBuffer];
     colorBuffer = backColorBuffer.map(row => [...row]);
@@ -50,38 +60,52 @@ export function endDraw() {
 
 export function flush() {
   const screen = document.getElementById("screen");
-  if (screen) {
-    // Build HTML with color spans
-    let html = '';
-    for (let y = 0; y < CGA.rows; y++) {
-      const row = buffer[y];
-      const colors = colorBuffer[y];
-      
-      if (!colors || colors.length === 0) {
-        // Escape HTML characters
-        html += escapeHtml(row);
-      } else {
-        let result = row;
-        let output = '';
-        let lastPos = 0;
-        
-        // Sort color spans by start position
-        colors.sort((a, b) => a.start - b.start);
-        
-        // Apply color spans
-        for (const span of colors) {
-          output += escapeHtml(result.substring(lastPos, span.start));
-          const spanText = escapeHtml(result.substring(span.start, span.end));
-          output += `<span class="cga-${span.color}">${spanText}</span>`;
-          lastPos = span.end;
-        }
-        output += escapeHtml(result.substring(lastPos));
-        html += output;
-      }
-      if (y < CGA.rows - 1) html += '\n';
-    }
-    screen.innerHTML = html;
+  if (!screen) {
+    console.warn('flush: screen element not found');
+    return;
   }
+  if (!buffer) {
+    console.warn('flush: buffer not initialized');
+    return;
+  }
+  
+  // Build HTML with color spans
+  let html = '';
+  for (let y = 0; y < CGA.rows; y++) {
+    const row = buffer[y];
+    const colors = colorBuffer[y];
+    
+    if (!colors || colors.length === 0) {
+      // Escape HTML characters
+      html += escapeHtml(row);
+    } else {
+      let result = row;
+      let output = '';
+      let lastPos = 0;
+      
+      // Sort color spans by start position
+      colors.sort((a, b) => a.start - b.start);
+      
+      // Apply color spans
+      for (const span of colors) {
+        output += escapeHtml(result.substring(lastPos, span.start));
+        const spanText = escapeHtml(result.substring(span.start, span.end));
+        output += `<span class="cga-${span.color}">${spanText}</span>`;
+        lastPos = span.end;
+      }
+      output += escapeHtml(result.substring(lastPos));
+      html += output;
+    }
+    if (y < CGA.rows - 1) html += '\n';
+  }
+  
+  // Debug: Check if we have actual content
+  const hasVisibleContent = html.replace(/[\s\n]/g, '').length > 0;
+  if (!hasVisibleContent) {
+    console.warn('flush: No visible content in buffer');
+  }
+  
+  screen.innerHTML = html;
 }
 
 function escapeHtml(text) {
@@ -95,16 +119,13 @@ export function putText(x, y, text, color = null) {
   if (text.length === 0) return;
   
   // Initialize buffers if they don't exist
-  if (!buffer) {
-    buffer = Array.from({ length: CGA.rows }, () => " ".repeat(CGA.cols));
-    colorBuffer = Array.from({ length: CGA.rows }, () => []);
-  }
+  initBuffers();
   
-  // Use back buffer if we're in drawing mode, otherwise front buffer
-  const targetBuffer = backBuffer ? backBuffer : buffer;
-  const targetColorBuffer = backBuffer ? backColorBuffer : colorBuffer;
+  // Choose the correct buffer based on drawing mode
+  const targetBuffer = useBackBuffer ? backBuffer : buffer;
+  const targetColorBuffer = useBackBuffer ? backColorBuffer : colorBuffer;
   
-  if (!targetBuffer) return;
+  if (!targetBuffer || !targetColorBuffer) return;
   
   const row = targetBuffer[y] || " ".repeat(CGA.cols);
   const safeText = text.substring(0, CGA.cols - x);
@@ -142,9 +163,9 @@ export function drawBox(x, y, width, height, color = null) {
   putText(x, y + height - 1, bl + h.repeat(width - 2) + br, color);
 }
 
-export function fillBox(x, y, width, height, char = " ") {
+export function fillBox(x, y, width, height, char = " ", color = null) {
   for (let i = 0; i < height; i++) {
-    putText(x, y + i, char.repeat(width));
+    putText(x, y + i, char.repeat(width), color);
   }
 }
 
@@ -160,6 +181,5 @@ export function drawCenteredBox(width, height) {
   return { x, y, width, height };
 }
 
-// Initialize buffers
-buffer = Array.from({ length: CGA.rows }, () => " ".repeat(CGA.cols));
-colorBuffer = Array.from({ length: CGA.rows }, () => []);
+// Call init to set up default buffers
+initBuffers();

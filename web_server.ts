@@ -9,7 +9,7 @@ import { SteamDetector } from "./steam_detector.ts";
 import { WebIconProcessor } from "./web_processor.ts";
 import { join } from "@std/path";
 
-const PORT = 5174;
+const PORT = 5176;
 
 // CORS headers for development
 const corsHeaders = {

@@ -22,9 +22,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
-:: Kill any existing deno processes on port 5174
+:: Kill any existing deno processes on port 5176
 taskkill /F /FI "WINDOWTITLE eq Icon Fixer Server*" >nul 2>&1
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5174 ^| findstr LISTENING') do (
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5176 ^| findstr LISTENING') do (
   taskkill /F /PID %%a >nul 2>&1
 )
 
@@ -39,20 +39,20 @@ echo   ║                   Fix Steam Desktop Icons                    ║
 echo   ║                                                               ║
 echo   ╚═══════════════════════════════════════════════════════════════╝
 echo.
-echo   Starting web server at: http://localhost:5174
+echo   Starting web server at: http://localhost:5176
 echo.
 
 :: Wait a moment for port to be freed
 timeout /t 1 /nobreak >nul
 
 echo   Opening browser...
-start "" http://localhost:5174
+start "" http://localhost:5176
 echo.
 echo   ──────────────────────────────────────────────────────────────
 echo   Press Ctrl+C to stop the server and exit
 echo   ──────────────────────────────────────────────────────────────
 echo.
-deno run -N -R -W --allow-run --allow-env web_server.ts
+deno run --allow-net=0.0.0.0:5176,localhost:5176 --allow-read --allow-write --allow-run --allow-env web_server.ts
 echo.
 echo   Server stopped.
 echo.

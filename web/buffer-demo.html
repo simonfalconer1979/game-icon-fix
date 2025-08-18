@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Old School Buffer Demo</title>
+  <style>
+    body {
+      background: #000;
+      color: #0F0;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+    
+    .demo-container {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .screen-container {
+      border: 2px solid #333;
+      padding: 10px;
+      background: #000;
+    }
+    
+    #oldScreen, #newScreen {
+      width: 640px;
+      height: 400px;
+      font-size: 16px;
+      line-height: 16px;
+      white-space: pre;
+      overflow: hidden;
+    }
+    
+    .controls {
+      margin-top: 20px;
+    }
+    
+    button {
+      background: #00AA00;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    
+    button:hover {
+      background: #00FF00;
+    }
+    
+    .stats {
+      color: #FFFF00;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Buffer Rendering Comparison</h1>
+  
+  <div class="demo-container">
+    <div>
+      <h2>Old Method (innerHTML)</h2>
+      <div class="screen-container">
+        <div id="oldScreen"></div>
+      </div>
+      <div class="stats" id="oldStats">FPS: 0 | Time: 0ms</div>
+    </div>
+    
+    <div>
+      <h2>New Method (Video Buffer)</h2>
+      <div class="screen-container">
+        <div id="newScreen"></div>
+      </div>
+      <div class="stats" id="newStats">FPS: 0 | Time: 0ms</div>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <button onclick="startDemo('starfield')">Starfield Demo</button>
+    <button onclick="startDemo('plasma')">Plasma Effect</button>
+    <button onclick="startDemo('matrix')">Matrix Rain</button>
+    <button onclick="startDemo('fire')">Fire Effect</button>
+    <button onclick="stopDemo()">Stop</button>
+  </div>
+  
+  <script type="module">
+    import { VideoBuffer, videoBufferCSS } from './video_buffer.js';
+    
+    // Add video buffer CSS
+    const style = document.createElement('style');
+    style.textContent = videoBufferCSS;
+    document.head.appendChild(style);
+    
+    // Initialize video buffer
+    const vb = new VideoBuffer(80, 25);
+    vb.init('newScreen');
+    
+    let animationId = null;
+    let currentDemo = null;
+    
+    // FPS tracking
+    let oldFPS = 0, newFPS = 0;
+    let oldFrameTime = 0, newFrameTime = 0;
+    let lastTime = performance.now();
+    let frameCount = 0;
+    
+    // Old method - using innerHTML
+    function renderOldMethod(content) {
+      const start = performance.now();
+      document.getElementById('oldScreen').innerHTML = content;
+      oldFrameTime = performance.now() - start;
+    }
+    
+    // Starfield demo
+    class Starfield {
+      constructor() {
+        this.stars = [];
+        for (let i = 0; i < 100; i++) {
+          this.stars.push({
+            x: Math.random() * 80,
+            y: Math.random() * 25,
+            speed: Math.random() * 2 + 0.5,
+            char: Math.random() > 0.5 ? '.' : '*'
+          });
+        }
+      }
+      
+      update() {
+        // Update star positions
+        for (let star of this.stars) {
+          star.x -= star.speed;
+          if (star.x < 0) {
+            star.x = 79;
+            star.y = Math.random() * 25;
+            star.speed = Math.random() * 2 + 0.5;
+          }
+        }
+        
+        // Render old method
+        let html = '';
+        const grid = Array(25).fill(null).map(() => Array(80).fill(' '));
+        for (let star of this.stars) {
+          const x = Math.floor(star.x);
+          const y = Math.floor(star.y);
+          if (x >= 0 && x < 80 && y >= 0 && y < 25) {
+            grid[y][x] = star.char;
+          }
+        }
+        for (let row of grid) {
+          html += row.join('') + '\n';
+        }
+        renderOldMethod(html);
+        
+        // Render new method
+        const start = performance.now();
+        vb.cls(' ', 'white', 'black');
+        for (let star of this.stars) {
+          const x = Math.floor(star.x);
+          const y = Math.floor(star.y);
+          const brightness = star.speed > 1.5 ? 'brightwhite' : 'white';
+          vb.writeChar(x, y, star.char, brightness);
+        }
+        vb.flip();
+        newFrameTime = performance.now() - start;
+      }
+    }
+    
+    // Matrix rain demo
+    class MatrixRain {
+      constructor() {
+        this.columns = [];
+        for (let x = 0; x < 80; x++) {
+          this.columns.push({
+            y: Math.random() * 25,
+            speed: Math.random() * 0.5 + 0.1,
+            chars: []
+          });
+          // Initialize column with random chars
+          for (let i = 0; i < 25; i++) {
+            this.columns[x].chars.push(String.fromCharCode(33 + Math.random() * 93));
+          }
+        }
+      }
+      
+      update() {
+        // Update columns
+        for (let col of this.columns) {
+          col.y += col.speed;
+          if (col.y > 25) {
+            col.y = 0;
+            // Randomize characters
+            for (let i = 0; i < col.chars.length; i++) {
+              if (Math.random() > 0.95) {
+                col.chars[i] = String.fromCharCode(33 + Math.random() * 93);
+              }
+            }
+          }
+        }
+        
+        // Render old method
+        let html = '<span style="color: #00FF00">';
+        const grid = Array(25).fill(null).map(() => Array(80).fill(' '));
+        for (let x = 0; x < 80; x++) {
+          const col = this.columns[x];
+          for (let y = 0; y < 25; y++) {
+            const brightness = Math.max(0, 1 - Math.abs(y - col.y) * 0.2);
+            if (brightness > 0.1) {
+              grid[y][x] = col.chars[y];
+            }
+          }
+        }
+        for (let row of grid) {
+          html += row.join('') + '\n';
+        }
+        html += '</span>';
+        renderOldMethod(html);
+        
+        // Render new method
+        const start = performance.now();
+        vb.cls(' ', 'green', 'black');
+        for (let x = 0; x < 80; x++) {
+          const col = this.columns[x];
+          for (let y = 0; y < 25; y++) {
+            const distance = Math.abs(y - col.y);
+            if (distance < 10) {
+              const color = distance < 2 ? 'brightwhite' : 
+                           distance < 5 ? 'lightgreen' : 'green';
+              vb.writeChar(x, y, col.chars[y], color);
+            }
+          }
+        }
+        vb.flip();
+        newFrameTime = performance.now() - start;
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      if (currentDemo) {
+        currentDemo.update();
+        
+        // Update FPS
+        frameCount++;
+        const now = performance.now();
+        if (now - lastTime > 1000) {
+          oldFPS = frameCount;
+          newFPS = frameCount;
+          frameCount = 0;
+          lastTime = now;
+          
+          // Update stats
+          document.getElementById('oldStats').textContent = 
+            `FPS: ${oldFPS} | Frame: ${oldFrameTime.toFixed(2)}ms`;
+          document.getElementById('newStats').textContent = 
+            `FPS: ${newFPS} | Frame: ${newFrameTime.toFixed(2)}ms`;
+        }
+      }
+      
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    // Start demo
+    window.startDemo = function(type) {
+      stopDemo();
+      
+      switch(type) {
+        case 'starfield':
+          currentDemo = new Starfield();
+          break;
+        case 'matrix':
+          currentDemo = new MatrixRain();
+          break;
+        default:
+          currentDemo = new Starfield();
+      }
+      
+      animate();
+    };
+    
+    // Stop demo
+    window.stopDemo = function() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      currentDemo = null;
+      
+      // Clear screens
+      document.getElementById('oldScreen').innerHTML = '';
+      vb.cls();
+      vb.flip();
+    };
+    
+    // Auto-start starfield
+    startDemo('starfield');
+  </script>
+</body>
+</html>

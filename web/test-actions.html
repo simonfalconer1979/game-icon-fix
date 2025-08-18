@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Test Menu Actions</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="monitor-frame">
+    <div class="monitor-bezel">
+      <div class="monitor-screen">
+        <div id="screen" class="screen"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div style="position: fixed; top: 10px; right: 10px; background: white; padding: 10px; color: black; font-family: Arial;">
+    <h3>Test Controls</h3>
+    <button onclick="testDetectSteam()">1. Detect Steam</button><br>
+    <button onclick="testScanGames()">2. Scan Games</button><br>
+    <button onclick="testFixDesktop()">3. Fix Desktop</button><br>
+    <button onclick="testExit()">5. Exit</button><br>
+    <button onclick="testReload()">Reload Menu</button>
+  </div>
+  
+  <script type="module">
+    import { clearScreen } from './ui.js';
+    import { showTopMenu } from './menu.js';
+    import { setController } from './controller.js';
+    
+    // Start the app
+    clearScreen();
+    const menu = showTopMenu();
+    setController(menu);
+    
+    // Test functions
+    window.testDetectSteam = () => {
+      console.log('Testing Detect Steam...');
+      menu.items[0].action();
+    };
+    
+    window.testScanGames = () => {
+      console.log('Testing Scan Games...');
+      menu.items[1].action();
+    };
+    
+    window.testFixDesktop = () => {
+      console.log('Testing Fix Desktop...');
+      menu.items[2].action();
+    };
+    
+    window.testExit = () => {
+      console.log('Testing Exit...');
+      menu.items[4].action();
+    };
+    
+    window.testReload = () => {
+      console.log('Reloading menu...');
+      clearScreen();
+      const newMenu = showTopMenu();
+      setController(newMenu);
+    };
+  </script>
+</body>
+</html>

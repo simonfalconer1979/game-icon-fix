@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Simple Test</title>
+  <style>
+    #screen {
+      font-family: 'Courier New', monospace;
+      white-space: pre;
+      background: black;
+      color: white;
+      padding: 10px;
+    }
+    .cga-cyan { color: #00AAAA; }
+    .cga-magenta { color: #AA00AA; }
+    .cga-white { color: #FFFFFF; }
+  </style>
+</head>
+<body>
+  <div id="screen"></div>
+  
+  <script>
+    // Very simple test without modules
+    const screen = document.getElementById('screen');
+    if (screen) {
+      screen.innerHTML = 'Hello World!\n<span class="cga-cyan">This is cyan</span>\n<span class="cga-magenta">This is magenta</span>';
+    } else {
+      console.error('Screen not found');
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
-import { clearScreen, drawBox, fillBox, putText, centerText, drawCenteredBox, flush, CGA, beginDraw, endDraw } from './ui.js';
+import { clearScreen, drawBox, fillBox, putText, centerText, drawCenteredBox, flush, CGA } from './ui.js';
 import { IconFixerAPI } from './api.js';
+import { setController } from './controller.js';
 
 let statusMessage = '';
 let statusColor = 'white';
@@ -13,17 +14,12 @@ export class Menu {
   }
 
   draw() {
-    console.log('Menu.draw() called');
     clearScreen();
-    console.log('clearScreen() completed');
     this.drawContent();
-    console.log('drawContent() completed');
     flush();
-    console.log('flush() completed');
   }
 
-  drawToBuffer() {
-    
+  drawContent() {
     // Simple ASCII title
     const title = "STEAM ICON FIXER v3.0";
     const subtitle = "Fix Your Desktop Icons";
@@ -39,17 +35,18 @@ export class Menu {
     putText(Math.floor((CGA.cols - this.title.length) / 2), menuY, this.title, 'white');
     putText(Math.floor((CGA.cols - 40) / 2), menuY + 1, "----------------------------------------", 'white');
     
-    // Menu items - selected in MAGENTA, others in CYAN
+    // Menu items - selected in MAGENTA, others in CYAN, with numbers
     for (let i = 0; i < this.items.length; i++) {
       const isSelected = (i === this.index);
       const prefix = isSelected ? "> " : "  ";
-      const text = prefix + this.items[i].label;
+      const number = `${i + 1}. `;
+      const text = prefix + number + this.items[i].label;
       const color = isSelected ? 'magenta' : 'cyan';
-      const itemX = Math.floor((CGA.cols - 40) / 2);
+      const itemX = Math.floor((CGA.cols - 45) / 2);
       putText(itemX, menuY + 3 + i, text, color);
     }
     
-    // Status message bar (expanded to 3 lines)
+    // Status message bar
     putText(0, CGA.rows - 11, "=".repeat(CGA.cols), 'white');
     
     // Split message into multiple lines if needed
@@ -76,12 +73,15 @@ export class Menu {
       }
     }
     
-    // Help text at bottom (moved down to accommodate larger message area)
+    // Help text at bottom
     putText(0, CGA.rows - 6, "-".repeat(CGA.cols), 'white');
     const helpText = "UP/DOWN: Navigate | ENTER: Select | ESC: Exit";
     putText(Math.floor((CGA.cols - helpText.length) / 2), CGA.rows - 5, helpText, 'white');
-    
-    flush();
+  }
+
+  // Draw to back buffer for double buffering
+  drawToBuffer() {
+    this.drawContent();
   }
 
   handleKey(e) {
@@ -109,20 +109,14 @@ export class Menu {
 }
 
 export function showTopMenu() {
-  console.log('showTopMenu called');
   const menu = new Menu('MAIN MENU', [
     { id: 'detect-steam', label: 'Detect Steam Installation', action: () => detectSteam() },
     { id: 'scan-games', label: 'Scan for Installed Games', action: () => scanInstalledGames() },
     { id: 'fix-desktop', label: 'Fix Icons on Desktop', action: () => fixDesktopIcons() },
-    { id: 'refresh-all', label: 'Replace ALL Desktop Shortcuts', action: () => replaceAllShortcuts() },
-    { id: 'exit', label: 'Exit', action: () => exitToDOS() },
     { id: 'shutdown', label: 'Shutdown', action: () => shutdownSequence() },
   ]);
-  console.log('Menu created with items:', menu.items.length);
   window.currentMenu = menu;
-  console.log('About to call menu.draw()');
   menu.draw();
-  console.log('Menu.draw() completed');
   return menu;
 }
 
@@ -272,15 +266,18 @@ function exitToDOS() {
   putText(1, CGA.rows - 2, "Press any key to restart Icon Fixer...", 'cyan');
   flush();
   
-  // Listen for any key to restart
-  const restartHandler = (e) => {
-    e.preventDefault();
-    clearInterval(cursorInterval);
-    document.removeEventListener('keydown', restartHandler);
-    showTopMenu();
+  // Create exit screen controller
+  const exitController = {
+    handleKey: (e) => {
+      e.preventDefault();
+      clearInterval(cursorInterval);
+      const menu = showTopMenu();
+      setController(menu);
+    }
   };
   
-  document.addEventListener('keydown', restartHandler);
+  // Set exit screen as active controller
+  setController(exitController);
 }
 
 function showLibrariesPopup(steamInfo, libraries) {
@@ -290,14 +287,15 @@ function showLibrariesPopup(steamInfo, libraries) {
   const popupY = Math.floor((CGA.rows - popupHeight) / 2);
   
   const drawPopup = () => {
-    beginDraw();
+    // Clear and redraw everything
+    clearScreen();
     
-    // Restore background
+    // Draw the menu first
     if (window.currentMenu) {
-      window.currentMenu.drawToBuffer();
+      window.currentMenu.drawContent();
     }
     
-    // Draw popup box
+    // Draw popup box on top
     fillBox(popupX, popupY, popupWidth, popupHeight, " ");
     drawBox(popupX, popupY, popupWidth, popupHeight, 'cyan');
     
@@ -351,27 +349,25 @@ function showLibrariesPopup(steamInfo, libraries) {
     const closeText = "[ Press ESC or ENTER to close ]";
     putText(popupX + Math.floor((popupWidth - closeText.length) / 2), popupY + popupHeight - 1, closeText, 'white');
     
-    endDraw();
+    flush();
   };
   
-  const handlePopupKey = (e) => {
-    e.preventDefault();
-    
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      // Close popup and restore menu
-      document.removeEventListener('keydown', handlePopupKey);
-      if (window.currentMenu) {
+  // Create popup controller
+  const popupController = {
+    handleKey: (e) => {
+      e.preventDefault();
+      
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        // Restore menu controller
+        setController(window.currentMenu);
         window.currentMenu.draw();
-        // Re-attach menu event handler
-        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
+        showMessage(`Steam ready: ${steamInfo.libraries} libraries configured`, 'success');
       }
-      showMessage(`Steam ready: ${steamInfo.libraries} libraries configured`, 'success');
     }
   };
   
-  // Remove menu handler temporarily and add popup handler
-  document.removeEventListener('keydown', window.currentMenu.handleKey);
-  document.addEventListener('keydown', handlePopupKey);
+  // Set popup as active controller
+  setController(popupController);
   
   drawPopup();
 }
@@ -387,9 +383,12 @@ function showGamesPopup(games) {
   const visibleItems = popupHeight - 6; // Account for borders and title
   
   const drawPopup = () => {
-    // Save current screen
+    // Clear and redraw everything
+    clearScreen();
+    
+    // Draw the menu first
     if (window.currentMenu) {
-      window.currentMenu.draw();
+      window.currentMenu.drawContent();
     }
     
     // Clear popup area with spaces first
@@ -412,24 +411,24 @@ function showGamesPopup(games) {
       
       // Format game name (truncate if too long)
       let displayName = game.name;
-      if (displayName.length > popupWidth - 6) {
-        displayName = displayName.substring(0, popupWidth - 9) + "...";
+      const maxNameLength = popupWidth - 8; // Account for margins and selection indicator
+      if (displayName.length > maxNameLength) {
+        displayName = displayName.substring(0, maxNameLength - 3) + "...";
       }
       
-      // Clear the entire line first with spaces
-      putText(popupX + 2, y, " ".repeat(popupWidth - 4), 'white');
+      // Create padded line
+      const prefix = isSelected ? "> " : "  ";
+      const paddedLine = (prefix + displayName).padEnd(popupWidth - 4, ' ');
+      const color = isSelected ? 'magenta' : 'white';
       
-      if (isSelected) {
-        putText(popupX + 2, y, "> " + displayName, 'magenta');
-      } else {
-        putText(popupX + 4, y, displayName, 'white');
-      }
+      putText(popupX + 2, y, paddedLine, color);
     }
     
     // Clear any remaining lines in the visible area
     for (let i = endIndex; i < scrollOffset + visibleItems; i++) {
       const y = popupY + 3 + (i - scrollOffset);
-      putText(popupX + 2, y, " ".repeat(popupWidth - 4), 'white');
+      const emptyLine = " ".repeat(popupWidth - 4);
+      putText(popupX + 2, y, emptyLine, 'white');
     }
     
     // Scroll indicators
@@ -448,52 +447,47 @@ function showGamesPopup(games) {
     flush();
   };
   
-  const handlePopupKey = (e) => {
-    e.preventDefault();
-    
-    if (e.key === 'Escape') {
-      // Close popup and restore menu
-      document.removeEventListener('keydown', handlePopupKey);
-      if (window.currentMenu) {
-        window.currentMenu.draw();
-        // Re-attach menu event handler
-        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
-      }
-    } else if (e.key === 'ArrowUp') {
-      if (selectedIndex > 0) {
-        selectedIndex--;
-        // Adjust scroll if needed
-        if (selectedIndex < scrollOffset) {
-          scrollOffset = selectedIndex;
-        }
-        drawPopup();
-      }
-    } else if (e.key === 'ArrowDown') {
-      if (selectedIndex < games.length - 1) {
-        selectedIndex++;
-        // Adjust scroll if needed
-        if (selectedIndex >= scrollOffset + visibleItems) {
-          scrollOffset = selectedIndex - visibleItems + 1;
-        }
-        drawPopup();
-      }
-    } else if (e.key === 'Enter') {
-      // Create shortcut for selected game
-      const game = games[selectedIndex];
-      showMessage(`Creating shortcut for ${game.name} (AppID: ${game.appId})...`, 'info');
+  // Create popup controller
+  const popupController = {
+    handleKey: (e) => {
+      e.preventDefault();
       
-      // Close popup
-      document.removeEventListener('keydown', handlePopupKey);
-      if (window.currentMenu) {
+      if (e.key === 'Escape') {
+        // Restore menu controller
+        setController(window.currentMenu);
         window.currentMenu.draw();
-        document.addEventListener('keydown', (e) => window.currentMenu.handleKey(e));
+      } else if (e.key === 'ArrowUp') {
+        if (selectedIndex > 0) {
+          selectedIndex--;
+          // Adjust scroll if needed
+          if (selectedIndex < scrollOffset) {
+            scrollOffset = selectedIndex;
+          }
+          drawPopup();
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (selectedIndex < games.length - 1) {
+          selectedIndex++;
+          // Adjust scroll if needed
+          if (selectedIndex >= scrollOffset + visibleItems) {
+            scrollOffset = selectedIndex - visibleItems + 1;
+          }
+          drawPopup();
+        }
+      } else if (e.key === 'Enter') {
+        // Create shortcut for selected game
+        const game = games[selectedIndex];
+        showMessage(`Creating shortcut for ${game.name} (AppID: ${game.appId})...`, 'info');
+        
+        // Restore menu controller
+        setController(window.currentMenu);
+        window.currentMenu.draw();
       }
     }
   };
   
-  // Remove menu handler temporarily and add popup handler
-  document.removeEventListener('keydown', window.currentMenu.handleKey);
-  document.addEventListener('keydown', handlePopupKey);
+  // Set popup as active controller
+  setController(popupController);
   
   drawPopup();
 }
@@ -507,7 +501,7 @@ async function shutdownSequence() {
   
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  putText(1, 2, "System is shutting down...", 'cyan');
+  putText(1, 2, "Windows is shutting down...", 'cyan');
   flush();
   
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -531,40 +525,54 @@ async function shutdownSequence() {
   
   // Final message
   putText(1, 11, "It is now safe to turn off your computer.", 'cyan');
-  putText(1, 12, "_", 'white');
   flush();
   
-  // Blinking cursor for a moment
-  let blinks = 0;
-  const blinkInterval = setInterval(() => {
-    const cursor = blinks % 2 === 0 ? "_" : " ";
-    putText(1, 12, cursor, 'white');
-    flush();
-    blinks++;
-    
-    if (blinks > 6) {
-      clearInterval(blinkInterval);
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Simulate CRT monitor power down
+  clearScreen();
+  putText(39, 12, "*", 'white');  // Single white dot in center
+  flush();
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Fade to black
+  clearScreen();
+  flush();
+  
+  // Add power-off effect to the monitor
+  const screen = document.querySelector('.monitor-screen');
+  if (screen) {
+    screen.style.transition = 'all 0.5s ease-out';
+    screen.style.backgroundColor = '#000';
+    screen.style.opacity = '0';
+  }
+  
+  // Attempt to close the browser tab/window
+  setTimeout(() => {
+    // Try multiple methods to close the window
+    try {
+      // Method 1: Direct window.close()
+      window.close();
       
-      // Fade to black effect
-      setTimeout(() => {
-        clearScreen();
-        flush();
-        
-        // Show final message before closing
-        putText(30, 12, "Goodbye!", 'cyan');
-        flush();
-        
-        // Close the browser window after a short delay
-        setTimeout(() => {
-          window.close();
-          // If window.close() doesn't work (due to browser security), show a message
-          setTimeout(() => {
-            clearScreen();
-            putText(20, 12, "You can now close this window.", 'cyan');
-            flush();
-          }, 500);
-        }, 1500);
-      }, 1000);
+      // Method 2: Open blank page and close
+      window.open('', '_self', '');
+      window.close();
+      
+      // Method 3: Replace location with about:blank
+      window.location.href = 'about:blank';
+      
+    } catch (e) {
+      // If all methods fail, show a black screen with instructions
+      document.body.style.backgroundColor = '#000';
+      document.body.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+          <div style="text-align: center; color: #333; font-family: monospace;">
+            <p>POWER OFF</p>
+            <p style="font-size: 12px; margin-top: 20px;">Close this tab to complete shutdown</p>
+          </div>
+        </div>
+      `;
     }
-  }, 400);
+  }, 1000);
 }

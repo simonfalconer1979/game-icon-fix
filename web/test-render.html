@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Test Render</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="screen" class="screen">
+    <!-- Test content will go here -->
+  </div>
+  
+  <script type="module">
+    import { clearScreen, putText, flush, CGA } from './ui.js';
+    
+    console.log('Test starting...');
+    
+    // Wait for DOM
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM ready');
+      
+      // Initialize and test
+      clearScreen();
+      console.log('Screen cleared');
+      
+      putText(10, 5, "TEST MESSAGE", 'cyan');
+      console.log('Text added');
+      
+      flush();
+      console.log('Flushed');
+      
+      // Check what's in the screen
+      const screen = document.getElementById('screen');
+      console.log('Screen content:', screen.innerHTML);
+    });
+  </script>
+</body>
+</html>

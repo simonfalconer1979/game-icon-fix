@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Test Menu Actions</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="monitor-frame">
+    <div class="monitor-bezel">
+      <div class="monitor-screen">
+        <div id="screen" class="screen"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div style="position: fixed; top: 10px; right: 10px; background: rgba(255,255,255,0.9); padding: 10px; color: black; font-family: Arial; max-width: 300px;">
+    <h3>Debug Console</h3>
+    <div id="debug" style="font-size: 12px; max-height: 400px; overflow-y: auto;"></div>
+  </div>
+  
+  <script type="module">
+    import { clearScreen, flush, putText } from './ui.js';
+    import { showTopMenu } from './menu.js';
+    import { setController } from './controller.js';
+    
+    // Debug logging
+    const debug = document.getElementById('debug');
+    function log(msg) {
+      const time = new Date().toTimeString().split(' ')[0];
+      debug.innerHTML += `<div>[${time}] ${msg}</div>`;
+      debug.scrollTop = debug.scrollHeight;
+      console.log(msg);
+    }
+    
+    // Intercept flush to see when screen updates
+    const originalFlush = flush;
+    window.flushCount = 0;
+    const wrappedFlush = function() {
+      window.flushCount++;
+      log(`flush() called #${window.flushCount}`);
+      return originalFlush.apply(this, arguments);
+    };
+    
+    // Check screen content
+    function checkScreen() {
+      const screen = document.getElementById('screen');
+      const content = screen.innerHTML;
+      const hasContent = content && content.trim().length > 0;
+      log(`Screen has content: ${hasContent} (${content.length} chars)`);
+      if (hasContent && content.length < 200) {
+        log(`Content preview: ${content.substring(0, 100)}...`);
+      }
+    }
+    
+    // Start app
+    log('Starting application...');
+    clearScreen();
+    log('clearScreen() called');
+    
+    const menu = showTopMenu();
+    log('showTopMenu() returned');
+    
+    setController(menu);
+    log('Controller set');
+    
+    // Check screen after a moment
+    setTimeout(() => {
+      checkScreen();
+      
+      // Try selecting first menu item
+      setTimeout(() => {
+        log('Testing: Selecting first menu item (Detect Steam)');
+        if (menu.items && menu.items[0]) {
+          menu.items[0].action();
+          
+          setTimeout(() => {
+            checkScreen();
+          }, 1000);
+        }
+      }, 2000);
+    }, 500);
+  </script>
+</body>
+</html>

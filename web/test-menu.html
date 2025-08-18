@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Menu Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="monitor-frame">
+    <div class="monitor-bezel">
+      <div class="monitor-screen">
+        <div id="screen" class="screen"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    console.log('Test starting...');
+    
+    // Import just what we need
+    import { clearScreen, putText, flush } from './ui.js';
+    
+    // Wait for DOM
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM ready, waiting a bit...');
+      
+      setTimeout(() => {
+        console.log('Starting render test');
+        
+        // Clear and test
+        clearScreen();
+        console.log('Screen cleared');
+        
+        // Draw title
+        putText(29, 2, "STEAM ICON FIXER v3.0", 'magenta');
+        putText(28, 3, "Fix Your Desktop Icons", 'cyan');
+        putText(0, 4, "=".repeat(80), 'white');
+        
+        // Draw menu
+        putText(33, 6, "MAIN MENU", 'white');
+        putText(20, 7, "----------------------------------------", 'white');
+        
+        // Menu items
+        putText(20, 9, "> Detect Steam Installation", 'magenta');
+        putText(20, 10, "  Scan for Installed Games", 'cyan');
+        putText(20, 11, "  Fix Icons on Desktop", 'cyan');
+        putText(20, 12, "  Replace ALL Desktop Shortcuts", 'cyan');
+        putText(20, 13, "  Exit", 'cyan');
+        putText(20, 14, "  Shutdown", 'cyan');
+        
+        console.log('Text added, flushing...');
+        flush();
+        console.log('Flush complete');
+        
+        // Check result
+        const screen = document.getElementById('screen');
+        console.log('Screen innerHTML length:', screen.innerHTML.length);
+        console.log('First 200 chars:', screen.innerHTML.substring(0, 200));
+      }, 200);
+    });
+  </script>
+</body>
+</html>

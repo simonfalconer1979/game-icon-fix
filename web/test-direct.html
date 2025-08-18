@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Direct Test</title>
+  <style>
+    #screen {
+      font-family: 'Courier New', monospace;
+      white-space: pre;
+      background: black;
+      color: #00AAAA;
+      padding: 10px;
+      width: 80ch;
+      height: 25em;
+      line-height: 1;
+    }
+    .cga-cyan { color: #00AAAA; }
+    .cga-magenta { color: #AA00AA; }
+    .cga-white { color: #FFFFFF; }
+  </style>
+</head>
+<body>
+  <h2>Direct HTML Test</h2>
+  <div id="screen"></div>
+  
+  <h2>Module Test</h2>
+  <div id="screen2" class="screen"></div>
+  
+  <script>
+    // Direct test - should always work
+    const screen1 = document.getElementById('screen');
+    const testContent = `                             <span class="cga-magenta">STEAM ICON FIXER v3.0</span>
+                            <span class="cga-cyan">Fix Your Desktop Icons</span>
+<span class="cga-white">================================================================================</span>
+
+                                 <span class="cga-white">MAIN MENU</span>
+                    <span class="cga-white">----------------------------------------</span>
+    
+                    <span class="cga-magenta">> Detect Steam Installation</span>
+                    <span class="cga-cyan">  Scan for Installed Games</span>
+                    <span class="cga-cyan">  Fix Icons on Desktop</span>
+                    <span class="cga-cyan">  Replace ALL Desktop Shortcuts</span>
+                    <span class="cga-cyan">  Exit</span>
+                    <span class="cga-cyan">  Shutdown</span>`;
+    
+    screen1.innerHTML = testContent;
+    console.log('Direct test complete');
+  </script>
+  
+  <script type="module">
+    // Module test
+    import { clearScreen, putText, flush } from './ui.js';
+    
+    setTimeout(() => {
+      const screen2 = document.getElementById('screen2');
+      if (screen2) {
+        screen2.id = 'screen'; // ui.js looks for id="screen"
+        
+        clearScreen();
+        putText(29, 2, "STEAM ICON FIXER v3.0", 'magenta');
+        putText(28, 3, "Fix Your Desktop Icons", 'cyan');
+        flush();
+        
+        console.log('Module test complete');
+        
+        // Check result
+        console.log('Screen2 content length:', screen2.innerHTML.length);
+      }
+    }, 500);
+  </script>
+</body>
+</html>

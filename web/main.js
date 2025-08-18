@@ -1,32 +1,18 @@
 import { clearScreen } from './ui.js';
 import { showTopMenu } from './menu.js';
-
-let activeController = null;
-
-function setController(ctrl) {
-  if (activeController?.detach) activeController.detach();
-  activeController = ctrl;
-}
+import { setController } from './controller.js';
 
 function boot() {
-  console.log('Boot function called');
   clearScreen();
-  console.log('Screen cleared');
   const menu = showTopMenu();
-  console.log('Menu created:', menu);
   setController(menu);
-
-  // Keyboard routing
-  window.addEventListener('keydown', (e) => {
-    if (!activeController) return;
-    if (typeof activeController.handleKey === 'function') {
-      activeController.handleKey(e);
-    }
-  });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  boot();
+  // Small delay to ensure everything is loaded
+  setTimeout(() => {
+    boot();
+  }, 100);
   
   // Power button functionality
   const powerButton = document.getElementById('power-button');

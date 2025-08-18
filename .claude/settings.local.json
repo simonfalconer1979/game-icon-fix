@@ -14,7 +14,10 @@
       "Bash(git remote add:*)",
       "Bash(curl:*)",
       "WebSearch",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(taskkill:*)",
+      "Bash(start http://localhost:5175)",
+      "Bash(start http://localhost:5175/test-direct.html)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
