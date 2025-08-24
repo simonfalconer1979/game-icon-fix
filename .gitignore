@@ -72,9 +72,15 @@ $RECYCLE.BIN/
 *.swp
 *~
 
-# Icon creation script output (keep the final icons)
+# Icon creation artifacts
 app.bmp
 create_icon.ps1
+steamfix_alt.ico
+
+# Publishing directories
+publish/
+publish-*/
+artifacts/
 
 # User-specific files
 *.rsuser
