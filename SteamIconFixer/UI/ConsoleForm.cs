@@ -2,6 +2,9 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace SteamIconFixer.UI
@@ -89,7 +92,7 @@ namespace SteamIconFixer.UI
             this.StartPosition = FormStartPosition.CenterScreen;
             
             // Set size for 100x37 character display (SVGA 800x600)
-            // Using Courier New 10pt Bold typically needs about 8x16 pixels per character
+            // Perfect DOS VGA font at size 16 gives exactly 8x16 pixels per character
             int charWidth = 8;
             int charHeight = 16;
             int consoleWidth = 100 * charWidth;   // 800 pixels
@@ -145,6 +148,7 @@ namespace SteamIconFixer.UI
         private Graphics? backBufferGraphics;
         private float charWidth;
         private float charHeight;
+        private static PrivateFontCollection? privateFonts;
 
         public ConsolePanel()
         {
@@ -153,16 +157,8 @@ namespace SteamIconFixer.UI
                     ControlStyles.DoubleBuffer | 
                     ControlStyles.ResizeRedraw, true);
             
-            // Use a proper monospace font
-            // Courier New is more reliable for SVGA-style rendering
-            try
-            {
-                consoleFont = new Font("Courier New", 10, FontStyle.Bold);
-            }
-            catch
-            {
-                consoleFont = new Font(FontFamily.GenericMonospace, 10, FontStyle.Bold);
-            }
+            // Load the embedded Perfect DOS VGA font
+            LoadEmbeddedFont();
             
             // Calculate character dimensions
             using (var tempBitmap = new Bitmap(1, 1))
@@ -171,6 +167,58 @@ namespace SteamIconFixer.UI
                 var size = tempGraphics.MeasureString("W", consoleFont);
                 charWidth = size.Width;
                 charHeight = size.Height;
+            }
+        }
+
+        private void LoadEmbeddedFont()
+        {
+            try
+            {
+                // Load the embedded font from resources
+                privateFonts = new PrivateFontCollection();
+                
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = "SteamIconFixer.Resources.PerfectDOSVGA437Win.ttf";
+                
+                using (var fontStream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (fontStream != null)
+                    {
+                        // Load font from stream into memory
+                        byte[] fontData = new byte[fontStream.Length];
+                        fontStream.Read(fontData, 0, fontData.Length);
+                        
+                        // Create a GCHandle to pin the font data in memory
+                        IntPtr fontPtr = Marshal.AllocCoTaskMem(fontData.Length);
+                        Marshal.Copy(fontData, 0, fontPtr, fontData.Length);
+                        
+                        // Add font to private collection
+                        privateFonts.AddMemoryFont(fontPtr, fontData.Length);
+                        
+                        // Use size 16 for perfect pixel alignment (DOS font works best at multiples of 8)
+                        consoleFont = new Font(privateFonts.Families[0], 16, FontStyle.Regular, GraphicsUnit.Pixel);
+                        
+                        // Free the memory after font is created
+                        Marshal.FreeCoTaskMem(fontPtr);
+                    }
+                    else
+                    {
+                        // Fallback if embedded font not found
+                        throw new Exception("Embedded font not found");
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to Courier New if Perfect DOS VGA font fails to load
+                try
+                {
+                    consoleFont = new Font("Courier New", 10, FontStyle.Bold);
+                }
+                catch
+                {
+                    consoleFont = new Font(FontFamily.GenericMonospace, 10, FontStyle.Bold);
+                }
             }
         }
 
@@ -267,6 +315,7 @@ namespace SteamIconFixer.UI
             if (disposing)
             {
                 consoleFont?.Dispose();
+                privateFonts?.Dispose();
                 backBuffer?.Dispose();
                 backBufferGraphics?.Dispose();
             }

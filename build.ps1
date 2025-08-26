@@ -78,39 +78,41 @@ switch ($Target) {
     }
     
     "Publish" {
-        Write-Host "Creating release builds..." -ForegroundColor Yellow
+        Write-Host "Creating self-contained release build..." -ForegroundColor Yellow
         
-        # Create publish directory
+        # Clean previous publish
+        if (Test-Path $PublishPath) {
+            Remove-Item -Path $PublishPath -Recurse -Force
+        }
         New-Item -ItemType Directory -Path $PublishPath -Force | Out-Null
         
-        # Optimized build
-        Write-Host "Publishing optimized build (smaller size)..." -ForegroundColor Yellow
-        $optimizedPath = Join-Path $PublishPath "optimized"
-        dotnet publish $ProjectFile -c Release -r $RuntimeIdentifier --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -p:PublishReadyToRun=true -p:DebugType=none -p:DebugSymbols=false -o $optimizedPath --nologo --verbosity minimal
+        # Single self-contained build (Windows Forms doesn't support trimming)
+        Write-Host "Publishing self-contained executable..." -ForegroundColor Yellow
+        dotnet publish $ProjectFile -c Release -r $RuntimeIdentifier `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:PublishReadyToRun=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            -p:DebugSymbols=false `
+            -o $PublishPath --nologo --verbosity minimal
         
         if ($LASTEXITCODE -eq 0) {
-            $exePath = Join-Path $optimizedPath "SteamIconFixer.exe"
+            $exePath = Join-Path $PublishPath "SteamIconFixer.exe"
             if (Test-Path $exePath) {
                 $sizeMB = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
-                Write-Host "Optimized build: $sizeMB MB" -ForegroundColor Green
+                Write-Host ""
+                Write-Host "Build completed successfully!" -ForegroundColor Green
+                Write-Host "  File: SteamIconFixer.exe" -ForegroundColor Cyan
+                Write-Host "  Size: $sizeMB MB" -ForegroundColor Cyan
+                Write-Host "  Type: Self-contained (no .NET runtime required)" -ForegroundColor Cyan
+                Write-Host "  Path: $exePath" -ForegroundColor Blue
             }
+        } else {
+            Write-Host "Build failed!" -ForegroundColor Red
+            exit 1
         }
-        
-        # Full build
-        Write-Host "Publishing full build (better compatibility)..." -ForegroundColor Yellow
-        $fullPath = Join-Path $PublishPath "full"
-        dotnet publish $ProjectFile -c Release -r $RuntimeIdentifier --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=false -p:PublishReadyToRun=true -p:DebugType=none -p:DebugSymbols=false -o $fullPath --nologo --verbosity minimal
-        
-        if ($LASTEXITCODE -eq 0) {
-            $exePath = Join-Path $fullPath "SteamIconFixer.exe"
-            if (Test-Path $exePath) {
-                $sizeMB = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
-                Write-Host "Full build: $sizeMB MB" -ForegroundColor Green
-            }
-        }
-        
-        Write-Host "Publish completed" -ForegroundColor Green
-        Write-Host "Output: $PublishPath" -ForegroundColor Blue
     }
     
     "Release" {
@@ -124,18 +126,21 @@ switch ($Target) {
         # Create release directory
         New-Item -ItemType Directory -Path $ReleasePath -Force | Out-Null
         
-        # Copy files
-        $optimizedExe = Join-Path $PublishPath "optimized\SteamIconFixer.exe"
-        $fullExe = Join-Path $PublishPath "full\SteamIconFixer.exe"
+        # Get version from project file
+        $versionLine = Get-Content $ProjectFile | Select-String '<AssemblyVersion>([0-9.]+)</AssemblyVersion>'
+        $version = if ($versionLine) { $versionLine.Matches[0].Groups[1].Value } else { "2.0.0" }
         
-        if (Test-Path $optimizedExe) {
-            Copy-Item $optimizedExe -Destination (Join-Path $ReleasePath "SteamIconFixer.exe") -Force
-            Write-Host "Copied optimized build" -ForegroundColor Green
-        }
+        # Copy and rename executable with version
+        $sourceExe = Join-Path $PublishPath "SteamIconFixer.exe"
         
-        if (Test-Path $fullExe) {
-            Copy-Item $fullExe -Destination (Join-Path $ReleasePath "SteamIconFixer-full.exe") -Force
-            Write-Host "Copied full build" -ForegroundColor Green
+        if (Test-Path $sourceExe) {
+            $targetName = "SteamIconFixer-v$version.exe"
+            Copy-Item $sourceExe -Destination (Join-Path $ReleasePath $targetName) -Force
+            $sizeMB = [math]::Round((Get-Item $sourceExe).Length / 1MB, 2)
+            Write-Host "Created release: $targetName ($sizeMB MB)" -ForegroundColor Green
+        } else {
+            Write-Host "Error: Published executable not found!" -ForegroundColor Red
+            exit 1
         }
         
         # Copy documentation
