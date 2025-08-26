@@ -1,552 +1,190 @@
-# Steam Icon Fixer - Comprehensive Build Script
-# Handles complete build, test, and release lifecycle
+# Steam Icon Fixer - Build Script
+# A comprehensive build system for the Steam Icon Fixer application
 
 param(
-    [Parameter(Position=0)]
-    [ValidateSet('Build', 'Clean', 'Restore', 'Test', 'Publish', 'Release', 'All', 'Help')]
-    [string]$Action = 'Build',
+    [Parameter(Position = 0)]
+    [ValidateSet("Build", "Clean", "Run", "Test", "Publish", "Release", "All", "Help")]
+    [string]$Target = "Build",
     
     [Parameter()]
-    [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release',
-    
-    [Parameter()]
-    [string]$Version = '',
-    
-    [Parameter()]
-    [switch]$NoBanner,
-    
-    [Parameter()]
-    [switch]$Verbose
+    [ValidateSet("Debug", "Release")]
+    [string]$Configuration = "Release"
 )
 
-# Script configuration
+# Configuration
 $ErrorActionPreference = "Stop"
-$ProgressPreference = 'SilentlyContinue'
+$ProgressPreference = "SilentlyContinue"
 
-# Project paths
-$RootPath = $PSScriptRoot
-$ProjectPath = Join-Path $RootPath "SteamIconFixer"
+# Paths
+$ProjectRoot = $PSScriptRoot
+$ProjectPath = Join-Path $ProjectRoot "SteamIconFixer"
 $ProjectFile = Join-Path $ProjectPath "SteamIconFixer.csproj"
+$SolutionFile = Join-Path $ProjectRoot "SteamIconFixer.sln"
+$ReleasePath = Join-Path $ProjectRoot "Release"
 $PublishPath = Join-Path $ProjectPath "publish"
-$PublishOptimizedPath = Join-Path $ProjectPath "publish-optimized"
-$ReleasePath = Join-Path $RootPath "Release"
-$ArtifactsPath = Join-Path $RootPath "artifacts"
 
-# Build configuration
-$Runtime = "win-x64"
-$Framework = "net9.0-windows"
+# Build properties
+$RuntimeIdentifier = "win-x64"
+$TargetFramework = "net9.0-windows"
 
-# Colors for output
-function Write-Header {
-    param([string]$Message)
-    if (-not $NoBanner) {
-        Write-Host "`n$("="*60)" -ForegroundColor Cyan
-        Write-Host $Message -ForegroundColor White
-        Write-Host "$("="*60)" -ForegroundColor Cyan
-    }
-}
+Write-Host ""
+Write-Host "Steam Icon Fixer Build System" -ForegroundColor Cyan
+Write-Host "==============================" -ForegroundColor Cyan
+Write-Host ""
 
-function Write-Step {
-    param([string]$Message)
-    Write-Host "`n► $Message" -ForegroundColor Yellow
-}
-
-function Write-Success {
-    param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
-}
-
-function Write-Error {
-    param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
-}
-
-function Write-Info {
-    param([string]$Message)
-    Write-Host "  $Message" -ForegroundColor Gray
-}
-
-# Show banner
-function Show-Banner {
-    if (-not $NoBanner) {
-        Clear-Host
-        Write-Host @"
-
-╔═══════════════════════════════════════════════╗
-║  ███████╗████████╗███████╗ █████╗ ███╗   ███╗ ║
-║  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗ ████║ ║
-║  ███████╗   ██║   █████╗  ███████║██╔████╔██║ ║
-║  ╚════██║   ██║   ██╔══╝  ██╔══██║██║╚██╔╝██║ ║
-║  ███████║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║ ║
-║  ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝ ║
-║        ICON FIXER - BUILD SYSTEM               ║
-╚═══════════════════════════════════════════════╝
-
-"@ -ForegroundColor Cyan
-    }
-}
-
-# Check prerequisites
-function Test-Prerequisites {
-    Write-Step "Checking prerequisites"
-    
-    # Check for .NET SDK
-    try {
-        $dotnetVersion = dotnet --version
-        Write-Success ".NET SDK found: $dotnetVersion"
-    }
-    catch {
-        Write-Error ".NET SDK not found! Please install from: https://dotnet.microsoft.com/download"
-        exit 1
+switch ($Target) {
+    "Clean" {
+        Write-Host "Cleaning build artifacts..." -ForegroundColor Yellow
+        dotnet clean $ProjectFile --nologo --verbosity minimal
+        Remove-Item -Path (Join-Path $ProjectPath "bin") -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path (Join-Path $ProjectPath "obj") -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $PublishPath -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $ReleasePath -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "Clean completed" -ForegroundColor Green
     }
     
-    # Check for Git (optional)
-    try {
-        $gitVersion = git --version
-        Write-Success "Git found: $gitVersion"
-        $script:GitAvailable = $true
-    }
-    catch {
-        Write-Info "Git not found (optional)"
-        $script:GitAvailable = $false
-    }
-    
-    # Check project file exists
-    if (-not (Test-Path $ProjectFile)) {
-        Write-Error "Project file not found: $ProjectFile"
-        exit 1
-    }
-    Write-Success "Project file found"
-}
-
-# Clean build artifacts
-function Invoke-Clean {
-    Write-Header "CLEAN BUILD ARTIFACTS"
-    
-    Write-Step "Cleaning build directories..."
-    
-    $dirsToClean = @(
-        (Join-Path $ProjectPath "bin"),
-        (Join-Path $ProjectPath "obj"),
-        $PublishPath,
-        $PublishOptimizedPath,
-        $ReleasePath,
-        $ArtifactsPath
-    )
-    
-    foreach ($dir in $dirsToClean) {
-        if (Test-Path $dir) {
-            Remove-Item -Path $dir -Recurse -Force
-            Write-Info "Removed: $dir"
-        }
-    }
-    
-    Write-Success "Clean completed"
-}
-
-# Restore NuGet packages
-function Invoke-Restore {
-    Write-Header "RESTORE NUGET PACKAGES"
-    
-    Write-Step "Restoring packages..."
-    $output = dotnet restore $ProjectFile 2>&1
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "Packages restored successfully"
-        if ($Verbose) {
-            Write-Info $output
-        }
-    }
-    else {
-        Write-Error "Package restore failed"
-        Write-Host $output
-        exit 1
-    }
-}
-
-# Build the project
-function Invoke-Build {
-    Write-Header "BUILD PROJECT"
-    
-    Write-Step "Building $Configuration configuration..."
-    
-    $buildArgs = @(
-        "build",
-        $ProjectFile,
-        "-c", $Configuration,
-        "--nologo"
-    )
-    
-    if ($Version) {
-        $buildArgs += "-p:Version=$Version"
-        $buildArgs += "-p:AssemblyVersion=$Version"
-        $buildArgs += "-p:FileVersion=$Version"
-    }
-    
-    $output = & dotnet $buildArgs 2>&1
-    $buildSuccess = $LASTEXITCODE -eq 0
-    
-    # Parse output for warnings and errors
-    $warnings = ($output | Select-String -Pattern "warning" -AllMatches).Count
-    $errors = ($output | Select-String -Pattern "error" -AllMatches).Count
-    
-    if ($buildSuccess) {
-        Write-Success "Build completed successfully"
-        Write-Info "Warnings: $warnings | Errors: $errors"
-        
-        if ($Verbose -or $warnings -gt 0) {
-            Write-Info "Build output:"
-            $output | ForEach-Object { Write-Info $_ }
-        }
-    }
-    else {
-        Write-Error "Build failed with $errors errors"
-        $output | ForEach-Object { Write-Host $_ }
-        exit 1
-    }
-}
-
-# Run tests (if any exist)
-function Invoke-Test {
-    Write-Header "RUN TESTS"
-    
-    Write-Step "Looking for test projects..."
-    
-    $testProjects = Get-ChildItem -Path $RootPath -Filter "*.Tests.csproj" -Recurse
-    
-    if ($testProjects.Count -eq 0) {
-        Write-Info "No test projects found"
-        return
-    }
-    
-    foreach ($testProject in $testProjects) {
-        Write-Step "Running tests in $($testProject.Name)..."
-        
-        $output = dotnet test $testProject.FullName -c $Configuration --nologo --no-build 2>&1
-        
+    "Build" {
+        Write-Host "Building project..." -ForegroundColor Yellow
+        dotnet restore $ProjectFile --nologo --verbosity minimal
+        dotnet build $ProjectFile -c $Configuration --nologo --verbosity minimal
         if ($LASTEXITCODE -eq 0) {
-            Write-Success "Tests passed"
-        }
-        else {
-            Write-Error "Tests failed"
-            $output | ForEach-Object { Write-Host $_ }
+            Write-Host "Build completed successfully" -ForegroundColor Green
+        } else {
+            Write-Host "Build failed" -ForegroundColor Red
             exit 1
         }
     }
-}
-
-# Publish the application
-function Invoke-Publish {
-    Write-Header "PUBLISH APPLICATION"
     
-    # Create release directory
-    if (-not (Test-Path $ReleasePath)) {
-        New-Item -ItemType Directory -Path $ReleasePath -Force | Out-Null
+    "Run" {
+        Write-Host "Running application..." -ForegroundColor Yellow
+        $exePath = Join-Path $ProjectPath "bin\$Configuration\$TargetFramework\SteamIconFixer.exe"
+        if (-not (Test-Path $exePath)) {
+            Write-Host "Building project first..." -ForegroundColor Yellow
+            dotnet build $ProjectFile -c $Configuration --nologo --verbosity minimal
+        }
+        Write-Host "Starting Steam Icon Fixer..." -ForegroundColor Cyan
+        & $exePath
     }
     
-    # Publish optimized version
-    Write-Step "Publishing optimized build (trimmed)..."
-    
-    $publishArgs = @(
-        "publish",
-        $ProjectFile,
-        "-c", $Configuration,
-        "-r", $Runtime,
-        "--self-contained",
-        "-p:PublishSingleFile=true",
-        "-p:PublishTrimmed=true",
-        "-p:TrimMode=partial",
-        "-p:PublishReadyToRun=true",
-        "-p:DebugType=none",
-        "-p:DebugSymbols=false",
-        "-o", $PublishOptimizedPath,
-        "--nologo"
-    )
-    
-    if ($Version) {
-        $publishArgs += "-p:Version=$Version"
-    }
-    
-    $output = & dotnet $publishArgs 2>&1
-    
-    if ($LASTEXITCODE -eq 0) {
-        $exePath = Join-Path $PublishOptimizedPath "SteamIconFixer.exe"
-        if (Test-Path $exePath) {
-            $fileInfo = Get-Item $exePath
-            $sizeMB = [math]::Round($fileInfo.Length / 1MB, 2)
-            Write-Success "Optimized build published: $sizeMB MB"
-            
-            # Copy to release folder
-            Copy-Item $exePath -Destination (Join-Path $ReleasePath "SteamIconFixer.exe") -Force
+    "Test" {
+        Write-Host "Running tests..." -ForegroundColor Yellow
+        dotnet test $SolutionFile -c $Configuration --nologo --verbosity minimal
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "All tests passed" -ForegroundColor Green
+        } else {
+            Write-Host "Tests failed" -ForegroundColor Red
+            exit 1
         }
     }
-    else {
-        Write-Error "Optimized publish failed"
-        $output | ForEach-Object { Write-Host $_ }
-        exit 1
-    }
     
-    # Publish full version
-    Write-Step "Publishing full build (untrimmed)..."
-    
-    $publishArgs = @(
-        "publish",
-        $ProjectFile,
-        "-c", $Configuration,
-        "-r", $Runtime,
-        "--self-contained",
-        "-p:PublishSingleFile=true",
-        "-p:PublishTrimmed=false",
-        "-p:PublishReadyToRun=true",
-        "-p:DebugType=none",
-        "-p:DebugSymbols=false",
-        "-o", $PublishPath,
-        "--nologo"
-    )
-    
-    if ($Version) {
-        $publishArgs += "-p:Version=$Version"
-    }
-    
-    $output = & dotnet $publishArgs 2>&1
-    
-    if ($LASTEXITCODE -eq 0) {
-        $exePath = Join-Path $PublishPath "SteamIconFixer.exe"
-        if (Test-Path $exePath) {
-            $fileInfo = Get-Item $exePath
-            $sizeMB = [math]::Round($fileInfo.Length / 1MB, 2)
-            Write-Success "Full build published: $sizeMB MB"
-            
-            # Copy to release folder
-            Copy-Item $exePath -Destination (Join-Path $ReleasePath "SteamIconFixer-full.exe") -Force
-        }
-    }
-    else {
-        Write-Error "Full publish failed"
-        $output | ForEach-Object { Write-Host $_ }
-        exit 1
-    }
-    
-    Write-Success "Both versions published to: $ReleasePath"
-}
-
-# Create release artifacts
-function Invoke-Release {
-    Write-Header "CREATE RELEASE ARTIFACTS"
-    
-    if (-not (Test-Path $ReleasePath)) {
-        Write-Error "No release files found. Run 'Publish' first."
-        exit 1
-    }
-    
-    # Create artifacts directory
-    if (-not (Test-Path $ArtifactsPath)) {
-        New-Item -ItemType Directory -Path $ArtifactsPath -Force | Out-Null
-    }
-    
-    # Determine version
-    if (-not $Version) {
-        if ($GitAvailable) {
-            $Version = git describe --tags --abbrev=0 2>$null
-            if (-not $Version) {
-                $Version = "v2.0.0"
+    "Publish" {
+        Write-Host "Creating release builds..." -ForegroundColor Yellow
+        
+        # Create publish directory
+        New-Item -ItemType Directory -Path $PublishPath -Force | Out-Null
+        
+        # Optimized build
+        Write-Host "Publishing optimized build (smaller size)..." -ForegroundColor Yellow
+        $optimizedPath = Join-Path $PublishPath "optimized"
+        dotnet publish $ProjectFile -c Release -r $RuntimeIdentifier --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -p:PublishReadyToRun=true -p:DebugType=none -p:DebugSymbols=false -o $optimizedPath --nologo --verbosity minimal
+        
+        if ($LASTEXITCODE -eq 0) {
+            $exePath = Join-Path $optimizedPath "SteamIconFixer.exe"
+            if (Test-Path $exePath) {
+                $sizeMB = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
+                Write-Host "Optimized build: $sizeMB MB" -ForegroundColor Green
             }
         }
-        else {
-            $Version = "v2.0.0"
+        
+        # Full build
+        Write-Host "Publishing full build (better compatibility)..." -ForegroundColor Yellow
+        $fullPath = Join-Path $PublishPath "full"
+        dotnet publish $ProjectFile -c Release -r $RuntimeIdentifier --self-contained -p:PublishSingleFile=true -p:PublishTrimmed=false -p:PublishReadyToRun=true -p:DebugType=none -p:DebugSymbols=false -o $fullPath --nologo --verbosity minimal
+        
+        if ($LASTEXITCODE -eq 0) {
+            $exePath = Join-Path $fullPath "SteamIconFixer.exe"
+            if (Test-Path $exePath) {
+                $sizeMB = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
+                Write-Host "Full build: $sizeMB MB" -ForegroundColor Green
+            }
         }
+        
+        Write-Host "Publish completed" -ForegroundColor Green
+        Write-Host "Output: $PublishPath" -ForegroundColor Blue
     }
     
-    $releaseName = "SteamIconFixer-$Version"
-    
-    # Create ZIP archive
-    Write-Step "Creating ZIP archive..."
-    
-    $zipPath = Join-Path $ArtifactsPath "$releaseName.zip"
-    
-    # Create temporary directory for release files
-    $tempDir = Join-Path $env:TEMP $releaseName
-    if (Test-Path $tempDir) {
-        Remove-Item $tempDir -Recurse -Force
-    }
-    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-    
-    # Copy files to temp directory
-    Copy-Item (Join-Path $ReleasePath "SteamIconFixer.exe") -Destination $tempDir
-    Copy-Item (Join-Path $ReleasePath "SteamIconFixer-full.exe") -Destination $tempDir
-    Copy-Item (Join-Path $RootPath "README.md") -Destination $tempDir
-    Copy-Item (Join-Path $RootPath "LICENSE") -Destination $tempDir
-    
-    # Create version info file
-    $versionInfo = @"
-Steam Icon Fixer $Version
-========================
-Release Date: $(Get-Date -Format "yyyy-MM-dd")
-Build Configuration: $Configuration
-Target Framework: $Framework
-Runtime: $Runtime
-
-Files:
-  SteamIconFixer.exe       : Optimized build (smaller size, ~26MB)
-  SteamIconFixer-full.exe  : Full build (maximum compatibility, ~69MB)
-  README.md                : Documentation
-  LICENSE                  : MIT License
-
-For issues and updates, visit:
-https://github.com/simonfalconer1979/game-icon-fix
-"@
-    $versionInfo | Out-File -FilePath (Join-Path $tempDir "VERSION.txt") -Encoding UTF8
-    
-    # Compress files
-    Compress-Archive -Path "$tempDir\*" -DestinationPath $zipPath -Force
-    
-    # Clean up temp directory
-    Remove-Item $tempDir -Recurse -Force
-    
-    $zipInfo = Get-Item $zipPath
-    $sizeMB = [math]::Round($zipInfo.Length / 1MB, 2)
-    Write-Success "Release archive created: $($zipInfo.Name) ($sizeMB MB)"
-    
-    # Create checksums
-    Write-Step "Generating checksums..."
-    
-    $checksumPath = Join-Path $ArtifactsPath "$releaseName-checksums.txt"
-    
-    @"
-SHA256 Checksums for $releaseName
-=====================================
-"@ | Out-File -FilePath $checksumPath -Encoding UTF8
-    
-    Get-ChildItem $ReleasePath -Filter "*.exe" | ForEach-Object {
-        $hash = Get-FileHash $_.FullName -Algorithm SHA256
-        "$($hash.Hash)  $($_.Name)" | Out-File -FilePath $checksumPath -Append -Encoding UTF8
+    "Release" {
+        Write-Host "Creating release package..." -ForegroundColor Yellow
+        
+        # Clean and build
+        & $PSCommandPath -Target Clean
+        & $PSCommandPath -Target Build
+        & $PSCommandPath -Target Publish
+        
+        # Create release directory
+        New-Item -ItemType Directory -Path $ReleasePath -Force | Out-Null
+        
+        # Copy files
+        $optimizedExe = Join-Path $PublishPath "optimized\SteamIconFixer.exe"
+        $fullExe = Join-Path $PublishPath "full\SteamIconFixer.exe"
+        
+        if (Test-Path $optimizedExe) {
+            Copy-Item $optimizedExe -Destination (Join-Path $ReleasePath "SteamIconFixer.exe") -Force
+            Write-Host "Copied optimized build" -ForegroundColor Green
+        }
+        
+        if (Test-Path $fullExe) {
+            Copy-Item $fullExe -Destination (Join-Path $ReleasePath "SteamIconFixer-full.exe") -Force
+            Write-Host "Copied full build" -ForegroundColor Green
+        }
+        
+        # Copy documentation
+        $docsToInclude = @("README.md", "LICENSE")
+        foreach ($doc in $docsToInclude) {
+            $docPath = Join-Path $ProjectRoot $doc
+            if (Test-Path $docPath) {
+                Copy-Item $docPath -Destination $ReleasePath -Force
+                Write-Host "Copied $doc" -ForegroundColor Green
+            }
+        }
+        
+        Write-Host "Release completed" -ForegroundColor Green
+        Write-Host "Release files: $ReleasePath" -ForegroundColor Blue
     }
     
-    $hash = Get-FileHash $zipPath -Algorithm SHA256
-    "$($hash.Hash)  $($zipInfo.Name)" | Out-File -FilePath $checksumPath -Append -Encoding UTF8
-    
-    Write-Success "Checksums generated: $checksumPath"
-    
-    # Show summary
-    Write-Header "RELEASE SUMMARY"
-    Write-Info "Version: $Version"
-    Write-Info "Artifacts directory: $ArtifactsPath"
-    Write-Info ""
-    Write-Info "Release files:"
-    Get-ChildItem $ArtifactsPath | ForEach-Object {
-        $sizeMB = [math]::Round($_.Length / 1MB, 2)
-        Write-Info "  - $($_.Name) ($sizeMB MB)"
+    "All" {
+        & $PSCommandPath -Target Clean
+        & $PSCommandPath -Target Build
+        & $PSCommandPath -Target Test
+        & $PSCommandPath -Target Publish
     }
     
-    if ($GitAvailable) {
-        Write-Info ""
-        Write-Info "To create GitHub release:"
-        Write-Info "  1. git tag -a $Version -m 'Release $Version'"
-        Write-Info "  2. git push origin $Version"
-        Write-Info "  3. Upload files from: $ArtifactsPath"
+    "Help" {
+        Write-Host "Usage: .\build.ps1 [Target] [Options]"
+        Write-Host ""
+        Write-Host "Targets:" -ForegroundColor Cyan
+        Write-Host "  Build    - Build the project (default)"
+        Write-Host "  Clean    - Remove all build artifacts"
+        Write-Host "  Run      - Build and run the application"
+        Write-Host "  Test     - Run unit tests"
+        Write-Host "  Publish  - Create optimized and full builds"
+        Write-Host "  Release  - Create a complete release package"
+        Write-Host "  All      - Run clean, build, test, and publish"
+        Write-Host "  Help     - Show this help message"
+        Write-Host ""
+        Write-Host "Options:" -ForegroundColor Cyan
+        Write-Host "  -Configuration  - Build configuration (Debug/Release, default: Release)"
+        Write-Host ""
+        Write-Host "Examples:" -ForegroundColor Cyan
+        Write-Host "  .\build.ps1"
+        Write-Host "  .\build.ps1 Build"
+        Write-Host "  .\build.ps1 Run -Configuration Debug"
+        Write-Host "  .\build.ps1 Release"
+    }
+    
+    default {
+        & $PSCommandPath -Target Build
     }
 }
 
-# Show help
-function Show-Help {
-    Write-Host @"
-
-Steam Icon Fixer - Build Script
-================================
-
-USAGE:
-    .\build.ps1 [Action] [-Configuration <Config>] [-Version <Version>] [-NoBanner] [-Verbose]
-
-ACTIONS:
-    Build      - Build the project (default)
-    Clean      - Clean all build artifacts
-    Restore    - Restore NuGet packages
-    Test       - Run unit tests
-    Publish    - Create release executables
-    Release    - Create release artifacts (ZIP, checksums)
-    All        - Run complete build pipeline
-    Help       - Show this help message
-
-PARAMETERS:
-    -Configuration  Debug|Release  Build configuration (default: Release)
-    -Version        string         Version number (e.g., "2.0.1")
-    -NoBanner                      Hide the banner
-    -Verbose                       Show detailed output
-
-EXAMPLES:
-    .\build.ps1                    # Build project in Release mode
-    .\build.ps1 All                # Run complete pipeline
-    .\build.ps1 Clean              # Clean build artifacts
-    .\build.ps1 Publish            # Create release executables
-    .\build.ps1 Release -Version 2.0.1  # Create v2.0.1 release
-
-WORKFLOW:
-    1. Clean      - Remove old artifacts
-    2. Restore    - Restore packages
-    3. Build      - Compile project
-    4. Test       - Run tests
-    5. Publish    - Create executables
-    6. Release    - Package for distribution
-
-"@ -ForegroundColor Cyan
-}
-
-# Main execution
-function Main {
-    Show-Banner
-    
-    switch ($Action) {
-        'Help' {
-            Show-Help
-        }
-        'Clean' {
-            Test-Prerequisites
-            Invoke-Clean
-        }
-        'Restore' {
-            Test-Prerequisites
-            Invoke-Restore
-        }
-        'Build' {
-            Test-Prerequisites
-            Invoke-Restore
-            Invoke-Build
-        }
-        'Test' {
-            Test-Prerequisites
-            Invoke-Restore
-            Invoke-Build
-            Invoke-Test
-        }
-        'Publish' {
-            Test-Prerequisites
-            Invoke-Restore
-            Invoke-Build
-            Invoke-Test
-            Invoke-Publish
-        }
-        'Release' {
-            Test-Prerequisites
-            Invoke-Restore
-            Invoke-Build
-            Invoke-Test
-            Invoke-Publish
-            Invoke-Release
-        }
-        'All' {
-            Test-Prerequisites
-            Invoke-Clean
-            Invoke-Restore
-            Invoke-Build
-            Invoke-Test
-            Invoke-Publish
-            Invoke-Release
-        }
-    }
-    
-    Write-Host "`n✨ Done!`n" -ForegroundColor Green
-}
-
-# Run main function
-Main
+Write-Host ""

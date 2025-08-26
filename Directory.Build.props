@@ -18,9 +18,8 @@
     <WarningLevel>5</WarningLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     
-    <!-- Output paths -->
-    <BaseOutputPath>$(MSBuildThisFileDirectory)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <!-- Output paths removed to prevent duplicate assembly attribute conflicts -->
+    <!-- Projects will use their default bin and obj folders -->
     
     <!-- Deterministic builds -->
     <Deterministic>true</Deterministic>

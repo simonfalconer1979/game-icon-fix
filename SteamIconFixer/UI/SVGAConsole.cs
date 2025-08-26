@@ -6,19 +6,45 @@ using Pastel;
 namespace SteamIconFixer.UI
 {
     /// <summary>
-    /// CGA-style console emulator with authentic 80x25 text mode
+    /// SVGA-style console emulator with 100x37 text mode (800x600 @ 8x16 font)
     /// </summary>
-    public static class CGAConsole
+    public static class SVGAConsole
     {
-        // CGA color palette (authentic 16-color palette)
+        // SVGA 256-color palette (using web-safe palette subset)
         public static class Colors
         {
+            // Primary colors
             public const string Black = "#000000";
-            public const string Blue = "#0000AA";
-            public const string Green = "#00AA00";
-            public const string Cyan = "#00AAAA";
-            public const string Red = "#AA0000";
-            public const string Magenta = "#AA00AA";
+            public const string White = "#FFFFFF";
+            public const string Red = "#FF0000";
+            public const string Green = "#00FF00";
+            public const string Blue = "#0000FF";
+            public const string Yellow = "#FFFF00";
+            public const string Cyan = "#00FFFF";
+            public const string Magenta = "#FF00FF";
+            
+            // Extended palette
+            public const string Orange = "#FF9900";
+            public const string Purple = "#9900FF";
+            public const string Pink = "#FF66CC";
+            public const string Lime = "#99FF00";
+            public const string Teal = "#00CC99";
+            public const string Navy = "#000099";
+            public const string Maroon = "#990000";
+            public const string Olive = "#999900";
+            
+            // Grays (8-level grayscale)
+            public const string Gray10 = "#1A1A1A";
+            public const string Gray20 = "#333333";
+            public const string Gray30 = "#4D4D4D";
+            public const string Gray40 = "#666666";
+            public const string Gray50 = "#808080";
+            public const string Gray60 = "#999999";
+            public const string Gray70 = "#B3B3B3";
+            public const string Gray80 = "#CCCCCC";
+            public const string Gray90 = "#E6E6E6";
+            
+            // Legacy CGA colors for compatibility
             public const string Brown = "#AA5500";
             public const string LightGray = "#AAAAAA";
             public const string DarkGray = "#555555";
@@ -27,13 +53,11 @@ namespace SteamIconFixer.UI
             public const string LightCyan = "#55FFFF";
             public const string LightRed = "#FF5555";
             public const string LightMagenta = "#FF55FF";
-            public const string Yellow = "#FFFF55";
-            public const string White = "#FFFFFF";
         }
 
-        // Screen dimensions (authentic CGA text mode)
-        public const int Width = 80;
-        public const int Height = 25;
+        // Screen dimensions (SVGA 800x600 with 8x16 font = 100x37 text mode)
+        public const int Width = 100;
+        public const int Height = 37;
 
         // Double buffering for flicker-free rendering
         private static char[,] _frontBuffer = new char[Height, Width];
@@ -94,13 +118,13 @@ namespace SteamIconFixer.UI
 
         private const int STD_OUTPUT_HANDLE = -11;
 
-        static CGAConsole()
+        static SVGAConsole()
         {
             Initialize();
         }
 
         /// <summary>
-        /// Initialize the CGA console with proper dimensions and settings
+        /// Initialize the SVGA console with proper dimensions and settings
         /// </summary>
         public static void Initialize()
         {
@@ -135,7 +159,7 @@ namespace SteamIconFixer.UI
                 COORD bufferSize = new COORD { X = Width, Y = Height };
                 SetConsoleScreenBufferSize(handle, bufferSize);
 
-                // Hide cursor for authentic CGA feel
+                // Hide cursor for authentic SVGA feel
                 CONSOLE_CURSOR_INFO cursorInfo = new CONSOLE_CURSOR_INFO
                 {
                     dwSize = 1,
@@ -155,7 +179,7 @@ namespace SteamIconFixer.UI
                 }
                 
                 Console.CursorVisible = false;
-                Console.Title = "Steam Icon Fixer v2.0 - CGA Mode";
+                Console.Title = "Steam Icon Fixer v2.0 - SVGA Mode";
 
                 // Clear buffers and screen completely
                 Clear();
@@ -165,12 +189,12 @@ namespace SteamIconFixer.UI
             {
                 // Fallback for environments where console manipulation fails
                 Console.Clear();
-                Console.WriteLine($"Warning: Could not set console to exact CGA mode: {ex.Message}");
+                Console.WriteLine($"Warning: Could not set console to exact SVGA mode: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Clear the screen with CGA-style instant clear
+        /// Clear the screen with SVGA-style instant clear
         /// </summary>
         public static void Clear()
         {
@@ -308,7 +332,7 @@ namespace SteamIconFixer.UI
                 if (i < filled)
                     PutChar(x + 1 + i, y, '█', color);
                 else
-                    PutChar(x + 1 + i, y, '░', Colors.DarkGray);
+                    PutChar(x + 1 + i, y, '░', Colors.Gray30);
             }
             PutChar(x + width - 1, y, ']', Colors.White);
         }

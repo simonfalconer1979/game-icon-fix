@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace SteamIconFixer.UI
 {
     /// <summary>
-    /// Retro CGA-style menu system
+    /// Retro SVGA-style menu system
     /// </summary>
     public class Menu
     {
@@ -35,11 +35,11 @@ namespace SteamIconFixer.UI
         public void Draw(int x = 0, int y = 0)
         {
             // Draw menu title
-            int menuX = (CGAConsole.Width - 45) / 2;
+            int menuX = (SVGAFormConsole.Width - 45) / 2;
             int menuY = y == 0 ? 8 : y;
 
-            CGAConsole.WriteCentered(menuY, Title, CGAConsole.Colors.White);
-            CGAConsole.WriteCentered(menuY + 1, new string('─', 40), CGAConsole.Colors.White);
+            SVGAFormConsole.WriteCentered(menuY, Title, SVGAFormConsole.Colors.White);
+            SVGAFormConsole.WriteCentered(menuY + 1, new string('─', 50), SVGAFormConsole.Colors.Gray70);
 
             // Draw menu items
             for (int i = 0; i < Items.Count; i++)
@@ -48,9 +48,9 @@ namespace SteamIconFixer.UI
                 string prefix = isSelected ? "> " : "  ";
                 string number = $"{i + 1}. ";
                 string text = prefix + number + Items[i].Label;
-                string color = isSelected ? CGAConsole.Colors.LightMagenta : CGAConsole.Colors.Cyan;
+                string color = isSelected ? SVGAFormConsole.Colors.Magenta : SVGAFormConsole.Colors.Cyan;
 
-                CGAConsole.WriteAt(menuX, menuY + 3 + i, text, color);
+                SVGAFormConsole.WriteAt(menuX, menuY + 3 + i, text, color);
             }
         }
 
