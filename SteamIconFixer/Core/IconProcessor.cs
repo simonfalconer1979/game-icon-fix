@@ -45,7 +45,7 @@ namespace SteamIconFixer.Core
         }
 
         /// <summary>
-        /// Process all shortcuts in given directories
+        /// Process all shortcuts in given directories with parallel downloads
         /// </summary>
         public async Task<List<ProcessResult>> ProcessShortcuts(params string[] directories)
         {
@@ -58,12 +58,68 @@ namespace SteamIconFixer.Core
                 urlFiles.AddRange(GetUrlFiles(dir));
             }
 
-            // Process each .url file
-            foreach (var file in urlFiles)
+            // Process files in parallel batches (max 5 concurrent downloads)
+            const int maxConcurrency = 5;
+            var semaphore = new System.Threading.SemaphoreSlim(maxConcurrency);
+            
+            var tasks = urlFiles.Select(async file =>
             {
-                var result = await ProcessShortcut(file);
-                results.Add(result);
+                await semaphore.WaitAsync();
+                try
+                {
+                    return await ProcessShortcut(file);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }).ToArray();
+
+            results.AddRange(await Task.WhenAll(tasks));
+
+            return results;
+        }
+
+        /// <summary>
+        /// Process shortcuts with progress callback
+        /// </summary>
+        public async Task<List<ProcessResult>> ProcessShortcutsWithProgress(
+            string[] directories,
+            Action<int, int>? progressCallback = null)
+        {
+            var results = new List<ProcessResult>();
+            var urlFiles = new List<string>();
+
+            // Collect all .url files
+            foreach (var dir in directories)
+            {
+                urlFiles.AddRange(GetUrlFiles(dir));
             }
+
+            int completed = 0;
+            int total = urlFiles.Count;
+            
+            // Process files in parallel batches
+            const int maxConcurrency = 5;
+            var semaphore = new System.Threading.SemaphoreSlim(maxConcurrency);
+            
+            var tasks = urlFiles.Select(async file =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    var result = await ProcessShortcut(file);
+                    System.Threading.Interlocked.Increment(ref completed);
+                    progressCallback?.Invoke(completed, total);
+                    return result;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }).ToArray();
+
+            results.AddRange(await Task.WhenAll(tasks));
 
             return results;
         }
@@ -306,6 +362,29 @@ namespace SteamIconFixer.Core
             {
                 Console.WriteLine($"Failed to flush icon cache: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Ensure a Steam game shortcut exists on the desktop
+        /// </summary>
+        public static void EnsureDesktopShortcut(SteamGame game, string desktopPath)
+        {
+            string shortcutName = $"{game.Name}.url";
+            string shortcutPath = Path.Combine(desktopPath, shortcutName);
+            if (File.Exists(shortcutPath))
+                return;
+
+            // Create .url file for the game
+            string url = $"steam://rungameid/{game.AppId}";
+            string iconPath = $"{game.LibraryPath}\\steam\\games\\steam_icon_{game.AppId}.ico";
+            var lines = new List<string>
+            {
+                "[InternetShortcut]",
+                $"URL={url}",
+                $"IconFile={iconPath}",
+                "IconIndex=0"
+            };
+            File.WriteAllLines(shortcutPath, lines);
         }
 
         #region Windows API for INI file operations

@@ -254,5 +254,6 @@ namespace SteamIconFixer.Core
         public string Name { get; set; } = string.Empty;
         public string InstallDir { get; set; } = string.Empty;
         public string LibraryPath { get; set; } = string.Empty;
+        public long SizeInBytes { get; set; } = 0;
     }
 }

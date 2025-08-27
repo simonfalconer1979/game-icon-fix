@@ -33,9 +33,9 @@ namespace SteamIconFixer.UI
             while (_isActive)
             {
                 DrawLibraryScreen(libraryCounts);
-                SVGAFormConsole.Render();
+                ModernConsole.Render();
                 
-                var key = SVGAFormConsole.WaitForKey();
+                var key = ModernConsole.WaitForKey();
                 HandleKeyPress(key);
             }
         }
@@ -76,7 +76,7 @@ namespace SteamIconFixer.UI
         /// </summary>
         private void DrawLibraryScreen(Dictionary<string, int> libraryCounts)
         {
-            SVGAFormConsole.Clear();
+            ModernConsole.Clear();
             
             // Title bar (lines 0-3)
             DrawTitleBar();
@@ -91,14 +91,14 @@ namespace SteamIconFixer.UI
         private void DrawTitleBar()
         {
             // Title bar with gradient effect
-            SVGAFormConsole.FillBox(0, 0, SVGAFormConsole.Width, 1, '═', SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteCentered(0, " STEAM LIBRARY MANAGER ", SVGAFormConsole.Colors.Yellow);
+            ModernConsole.FillBox(0, 0, ModernConsole.Width, 1, '═', ModernConsole.Colors.AccentCyan, ModernConsole.Colors.Background);
+            ModernConsole.WriteCentered(0, " STEAM LIBRARY MANAGER ", ModernConsole.Colors.AccentGold);
             
             // Steam info summary
-            SVGAFormConsole.WriteAt(2, 2, $"Steam Path: {TruncatePath(_steamDetector.InstallPath, 50)}", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteAt(SVGAFormConsole.Width - 25, 2, $"User: {_steamDetector.UserId ?? "Unknown"}", SVGAFormConsole.Colors.White);
+            ModernConsole.WriteAt(2, 2, $"Steam Path: {TruncatePath(_steamDetector.InstallPath, 50)}", ModernConsole.Colors.Text);
+            ModernConsole.WriteAt(ModernConsole.Width - 25, 2, $"User: {_steamDetector.UserId ?? "Unknown"}", ModernConsole.Colors.Text);
             
-            SVGAFormConsole.DrawHorizontalLine(0, 3, SVGAFormConsole.Width, SVGAFormConsole.Colors.DarkGray);
+            ModernConsole.DrawHorizontalLine(0, 3, ModernConsole.Width, ModernConsole.Colors.Surface);
         }
 
         private void DrawLibraryList(Dictionary<string, int> libraryCounts)
@@ -112,14 +112,14 @@ namespace SteamIconFixer.UI
             int col6 = 72;  // Size
             
             // Header row
-            SVGAFormConsole.WriteAt(col1, 5, "№", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(col2, 5, "Status", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(col3, 5, "Label", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(col4, 5, "Path", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(col5, 5, "Games", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(col6, 5, "Size", SVGAFormConsole.Colors.Cyan);
+            ModernConsole.WriteAt(col1, 5, "№", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(col2, 5, "Status", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(col3, 5, "Label", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(col4, 5, "Path", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(col5, 5, "Games", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(col6, 5, "Size", ModernConsole.Colors.AccentCyan);
             
-            SVGAFormConsole.DrawHorizontalLine(1, 6, SVGAFormConsole.Width - 2, SVGAFormConsole.Colors.DarkGray);
+            ModernConsole.DrawHorizontalLine(1, 6, ModernConsole.Width - 2, ModernConsole.Colors.Surface);
             
             // Library list (25 visible rows from line 7 to 31 in SVGA)
             int visibleRows = 25;
@@ -138,52 +138,52 @@ namespace SteamIconFixer.UI
                 // Selection highlight
                 if (isSelected)
                 {
-                    SVGAFormConsole.FillBox(1, startY + i, SVGAFormConsole.Width - 2, 1, ' ', SVGAFormConsole.Colors.Blue);
+                    ModernConsole.FillBox(1, startY + i, ModernConsole.Width - 2, 1, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.AccentAzure);
                 }
                 
                 // Row number
                 string rowNum = (libIndex + 1).ToString().PadLeft(2);
-                SVGAFormConsole.WriteAt(col1, startY + i, rowNum, 
-                    isSelected ? SVGAFormConsole.Colors.Yellow : SVGAFormConsole.Colors.DarkGray);
+                ModernConsole.WriteAt(col1, startY + i, rowNum, 
+                    isSelected ? ModernConsole.Colors.AccentGold : ModernConsole.Colors.Surface);
                 
                 // Status indicator
                 string status = isMain ? "[MAIN]" : "[LIB]";
-                string statusColor = isMain ? SVGAFormConsole.Colors.LightGreen : SVGAFormConsole.Colors.Cyan;
-                if (isSelected) statusColor = SVGAFormConsole.Colors.Yellow;
-                SVGAFormConsole.WriteAt(col2, startY + i, status, statusColor);
+                var statusColor = isMain ? ModernConsole.Colors.Success : ModernConsole.Colors.AccentCyan;
+                if (isSelected) statusColor = ModernConsole.Colors.AccentGold;
+                ModernConsole.WriteAt(col2, startY + i, status, statusColor);
                 
                 // Library label
                 string label = library.Label ?? "Library";
                 if (label.Length > 12) label = label.Substring(0, 11) + "…";
-                SVGAFormConsole.WriteAt(col3, startY + i, label, 
-                    isSelected ? SVGAFormConsole.Colors.White : SVGAFormConsole.Colors.LightGray);
+                ModernConsole.WriteAt(col3, startY + i, label, 
+                    isSelected ? ModernConsole.Colors.Text : ModernConsole.Colors.TextDim);
                 
                 // Path (with smart truncation)
                 string path = GetSmartPath(library.Path, 35);
-                SVGAFormConsole.WriteAt(col4, startY + i, path, 
-                    isSelected ? SVGAFormConsole.Colors.White : SVGAFormConsole.Colors.LightGray);
+                ModernConsole.WriteAt(col4, startY + i, path, 
+                    isSelected ? ModernConsole.Colors.Text : ModernConsole.Colors.TextDim);
                 
                 // Game count
                 int gameCount = libraryCounts.ContainsKey(library.Path) ? libraryCounts[library.Path] : 0;
                 string games = gameCount.ToString().PadLeft(3);
-                string gameColor = gameCount > 0 ? SVGAFormConsole.Colors.LightGreen : SVGAFormConsole.Colors.DarkGray;
-                if (isSelected) gameColor = SVGAFormConsole.Colors.Yellow;
-                SVGAFormConsole.WriteAt(col5, startY + i, games, gameColor);
+                var gameColor = gameCount > 0 ? ModernConsole.Colors.Success : ModernConsole.Colors.Surface;
+                if (isSelected) gameColor = ModernConsole.Colors.AccentGold;
+                ModernConsole.WriteAt(col5, startY + i, games, gameColor);
                 
                 // Size estimate (based on game count)
                 string size = GetSizeEstimate(gameCount);
-                SVGAFormConsole.WriteAt(col6, startY + i, size, 
-                    isSelected ? SVGAFormConsole.Colors.White : SVGAFormConsole.Colors.DarkGray);
+                ModernConsole.WriteAt(col6, startY + i, size, 
+                    isSelected ? ModernConsole.Colors.Text : ModernConsole.Colors.Surface);
             }
             
             // Scroll indicators
             if (_scrollOffset > 0)
             {
-                SVGAFormConsole.WriteAt(SVGAFormConsole.Width - 2, startY, "▲", SVGAFormConsole.Colors.Yellow);
+                ModernConsole.WriteAt(ModernConsole.Width - 2, startY, "▲", ModernConsole.Colors.AccentGold);
             }
             if (_scrollOffset + visibleRows < _steamDetector.Libraries.Count)
             {
-                SVGAFormConsole.WriteAt(SVGAFormConsole.Width - 2, startY + visibleRows - 1, "▼", SVGAFormConsole.Colors.Yellow);
+                ModernConsole.WriteAt(ModernConsole.Width - 2, startY + visibleRows - 1, "▼", ModernConsole.Colors.AccentGold);
             }
             
             // Summary box at bottom of list area
@@ -196,10 +196,10 @@ namespace SteamIconFixer.UI
             int totalLibraries = _steamDetector.Libraries.Count;
             
             // Summary line
-            SVGAFormConsole.DrawHorizontalLine(1, 20, SVGAFormConsole.Width - 2, SVGAFormConsole.Colors.DarkGray);
+            ModernConsole.DrawHorizontalLine(1, 20, ModernConsole.Width - 2, ModernConsole.Colors.Surface);
             
             string summary = $"Total: {totalLibraries} libraries, {totalGames} games installed";
-            SVGAFormConsole.WriteAt(3, 21, summary, SVGAFormConsole.Colors.Cyan);
+            ModernConsole.WriteAt(3, 21, summary, ModernConsole.Colors.AccentCyan);
             
             // Selected library details
             if (_selectedIndex < _steamDetector.Libraries.Count)
@@ -208,16 +208,16 @@ namespace SteamIconFixer.UI
                 string details = $"Selected: {selected.Path}";
                 if (details.Length > 75)
                     details = details.Substring(0, 72) + "...";
-                SVGAFormConsole.WriteAt(3, 22, details, SVGAFormConsole.Colors.White);
+                ModernConsole.WriteAt(3, 22, details, ModernConsole.Colors.Text);
             }
         }
 
         private void DrawStatusBar()
         {
-            SVGAFormConsole.DrawHorizontalLine(0, 23, SVGAFormConsole.Width, SVGAFormConsole.Colors.DarkGray);
+            ModernConsole.DrawHorizontalLine(0, 23, ModernConsole.Width, ModernConsole.Colors.Surface);
             
             string help = "↑/↓: Navigate │ ENTER: View Games │ SPACE: Quick Info │ ESC: Back";
-            SVGAFormConsole.WriteCentered(24, help, SVGAFormConsole.Colors.White);
+            ModernConsole.WriteCentered(24, help, ModernConsole.Colors.Text);
         }
 
         private void HandleKeyPress(ConsoleKeyInfo key)
@@ -305,16 +305,38 @@ namespace SteamIconFixer.UI
                             string content = File.ReadAllText(manifest);
                             string appId = Path.GetFileNameWithoutExtension(manifest).Replace("appmanifest_", "");
                             
-                            // Simple regex parsing
+                            // Parse game name
                             var nameMatch = System.Text.RegularExpressions.Regex.Match(content, @"""name""\s+""([^""]+)""");
+                            
+                            // Parse game size in bytes
+                            var sizeMatch = System.Text.RegularExpressions.Regex.Match(content, @"""SizeOnDisk""\s+""(\d+)""");
+                            long sizeInBytes = 0;
+                            if (sizeMatch.Success)
+                            {
+                                long.TryParse(sizeMatch.Groups[1].Value, out sizeInBytes);
+                            }
+                            
                             if (nameMatch.Success)
                             {
-                                games.Add(new SteamGame
+                                var game = new SteamGame
                                 {
                                     AppId = appId,
                                     Name = nameMatch.Groups[1].Value,
-                                    LibraryPath = library.Path
-                                });
+                                    LibraryPath = library.Path,
+                                    SizeInBytes = sizeInBytes
+                                };
+                                
+                                // Calculate actual game folder size if manifest doesn't have it
+                                if (sizeInBytes == 0)
+                                {
+                                    string gamePath = Path.Combine(steamappsPath, "common", game.Name);
+                                    if (Directory.Exists(gamePath))
+                                    {
+                                        game.SizeInBytes = GetDirectorySize(gamePath);
+                                    }
+                                }
+                                
+                                games.Add(game);
                             }
                         }
                         catch { }
@@ -326,89 +348,191 @@ namespace SteamIconFixer.UI
             return games.OrderBy(g => g.Name).ToList();
         }
 
+        /// <summary>
+        /// Get directory size in bytes
+        /// </summary>
+        private long GetDirectorySize(string path)
+        {
+            try
+            {
+                var dirInfo = new DirectoryInfo(path);
+                return dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         private void ShowGamesForLibrary(SteamLibrary library, List<SteamGame> games)
         {
             int scrollOffset = 0;
             int selectedIndex = 0;
             bool showingGames = true;
+            string searchFilter = "";
+            bool searchMode = false;
+            
+            // Calculate total library size
+            double totalSizeGB = games.Sum(g => g.SizeInBytes) / (1024.0 * 1024.0 * 1024.0);
             
             while (showingGames)
             {
-                SVGAFormConsole.Clear();
+                // Filter games if search is active
+                var displayGames = string.IsNullOrEmpty(searchFilter) ? games :
+                    games.Where(g => g.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)).ToList();
                 
-                // Title
-                SVGAFormConsole.FillBox(0, 0, SVGAFormConsole.Width, 1, '═', SVGAFormConsole.Colors.Cyan);
-                SVGAFormConsole.WriteCentered(0, $" GAMES IN: {library.Label?.ToUpper() ?? "LIBRARY"} ", SVGAFormConsole.Colors.Yellow);
+                ModernConsole.Clear();
                 
-                // Library path
-                SVGAFormConsole.WriteAt(2, 2, $"Path: {library.Path}", SVGAFormConsole.Colors.DarkGray);
-                SVGAFormConsole.WriteAt(2, 3, $"Total Games: {games.Count}", SVGAFormConsole.Colors.Cyan);
-                SVGAFormConsole.DrawHorizontalLine(0, 4, SVGAFormConsole.Width, SVGAFormConsole.Colors.DarkGray);
+                // Title with breadcrumb
+                ModernConsole.FillBox(0, 0, ModernConsole.Width, 1, '═', ModernConsole.Colors.AccentCyan, ModernConsole.Colors.Background);
+                string breadcrumb = $" Libraries > {library.Label?.ToUpper() ?? "LIBRARY"} ";
+                ModernConsole.WriteCentered(0, breadcrumb, ModernConsole.Colors.AccentGold);
                 
-                // Game list (16 visible rows)
-                int visibleRows = 16;
-                int startY = 5;
+                // Library info with total size
+                ModernConsole.WriteAt(2, 2, $"Path: {library.Path}", ModernConsole.Colors.Surface);
+                ModernConsole.WriteAt(2, 3, $"Games: {displayGames.Count} of {games.Count} | Total Size: {totalSizeGB:F1} GB", ModernConsole.Colors.AccentCyan);
                 
-                for (int i = 0; i < Math.Min(visibleRows, games.Count - scrollOffset); i++)
+                // Search bar
+                if (searchMode)
+                {
+                    ModernConsole.WriteAt(ModernConsole.Width - 35, 3, "Search: ", ModernConsole.Colors.Warning);
+                    ModernConsole.WriteAt(ModernConsole.Width - 27, 3, searchFilter.PadRight(20), ModernConsole.Colors.AccentGold);
+                    ModernConsole.WriteAt(ModernConsole.Width - 7, 3, "[ESC]", ModernConsole.Colors.TextDim);
+                }
+                else if (!string.IsNullOrEmpty(searchFilter))
+                {
+                    ModernConsole.WriteAt(ModernConsole.Width - 35, 3, $"Filter: {searchFilter}", ModernConsole.Colors.AccentPurple);
+                }
+                
+                ModernConsole.DrawHorizontalLine(0, 4, ModernConsole.Width, ModernConsole.Colors.Surface);
+                
+                // Column headers
+                ModernConsole.WriteAt(2, 5, "#", ModernConsole.Colors.AccentCyan);
+                ModernConsole.WriteAt(6, 5, "Name", ModernConsole.Colors.AccentCyan);
+                ModernConsole.WriteAt(55, 5, "Size (GB)", ModernConsole.Colors.AccentCyan);
+                ModernConsole.WriteAt(68, 5, "App ID", ModernConsole.Colors.AccentCyan);
+                ModernConsole.DrawHorizontalLine(0, 6, ModernConsole.Width, ModernConsole.Colors.Surface);
+                
+                // Game list (15 visible rows to make room for headers)
+                int visibleRows = 15;
+                int startY = 7;
+                
+                for (int i = 0; i < Math.Min(visibleRows, displayGames.Count - scrollOffset); i++)
                 {
                     int gameIndex = scrollOffset + i;
-                    if (gameIndex >= games.Count)
+                    if (gameIndex >= displayGames.Count)
                         break;
                         
-                    var game = games[gameIndex];
+                    var game = displayGames[gameIndex];
                     bool isSelected = (gameIndex == selectedIndex);
                     
                     if (isSelected)
                     {
-                        SVGAFormConsole.FillBox(1, startY + i, SVGAFormConsole.Width - 2, 1, ' ', SVGAFormConsole.Colors.Blue);
+                        ModernConsole.FillBox(1, startY + i, ModernConsole.Width - 2, 1, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.AccentAzure);
                     }
                     
                     string num = (gameIndex + 1).ToString().PadLeft(3);
-                    string name = game.Name.Length > 60 ? game.Name.Substring(0, 57) + "..." : game.Name;
+                    string name = game.Name.Length > 45 ? game.Name.Substring(0, 42) + "..." : game.Name;
+                    string sizeGB = game.SizeInBytes > 0 ? $"{(game.SizeInBytes / (1024.0 * 1024.0 * 1024.0)):F1}" : "--";
                     string appId = $"[{game.AppId}]";
                     
-                    SVGAFormConsole.WriteAt(2, startY + i, num, 
-                        isSelected ? SVGAFormConsole.Colors.Yellow : SVGAFormConsole.Colors.DarkGray);
-                    SVGAFormConsole.WriteAt(6, startY + i, name, 
-                        isSelected ? SVGAFormConsole.Colors.White : SVGAFormConsole.Colors.LightGray);
-                    SVGAFormConsole.WriteAt(68, startY + i, appId, 
-                        isSelected ? SVGAFormConsole.Colors.Cyan : SVGAFormConsole.Colors.DarkGray);
+                    // Highlight matched text in search results
+                    var nameColor = isSelected ? ModernConsole.Colors.Text : ModernConsole.Colors.TextDim;
+                    if (!string.IsNullOrEmpty(searchFilter) && game.Name.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        nameColor = isSelected ? ModernConsole.Colors.AccentGold : ModernConsole.Colors.AccentPurple;
+                    }
+                    
+                    ModernConsole.WriteAt(2, startY + i, num, 
+                        isSelected ? ModernConsole.Colors.AccentGold : ModernConsole.Colors.Surface);
+                    ModernConsole.WriteAt(6, startY + i, name, nameColor);
+                    ModernConsole.WriteAt(55, startY + i, sizeGB.PadLeft(8), 
+                        isSelected ? ModernConsole.Colors.AccentCyan : ModernConsole.Colors.TextDim);
+                    ModernConsole.WriteAt(68, startY + i, appId, 
+                        isSelected ? ModernConsole.Colors.AccentCyan : ModernConsole.Colors.Surface);
                 }
                 
                 // Scroll indicators
                 if (scrollOffset > 0)
-                    SVGAFormConsole.WriteAt(SVGAFormConsole.Width - 2, startY, "▲", SVGAFormConsole.Colors.Yellow);
-                if (scrollOffset + visibleRows < games.Count)
-                    SVGAFormConsole.WriteAt(SVGAFormConsole.Width - 2, startY + visibleRows - 1, "▼", SVGAFormConsole.Colors.Yellow);
+                    ModernConsole.WriteAt(ModernConsole.Width - 2, startY, "▲", ModernConsole.Colors.AccentGold);
+                if (scrollOffset + visibleRows < displayGames.Count)
+                    ModernConsole.WriteAt(ModernConsole.Width - 2, startY + visibleRows - 1, "▼", ModernConsole.Colors.AccentGold);
                 
                 // Help
-                SVGAFormConsole.DrawHorizontalLine(0, 22, SVGAFormConsole.Width, SVGAFormConsole.Colors.DarkGray);
-                SVGAFormConsole.WriteCentered(23, "↑/↓: Navigate │ ESC: Back to Libraries", SVGAFormConsole.Colors.White);
+                ModernConsole.DrawHorizontalLine(0, 22, ModernConsole.Width, ModernConsole.Colors.Surface);
+                string helpText = searchMode ? 
+                    "Type to search | ESC: Exit search mode" :
+                    "↑/↓: Navigate | /: Search | C: Clear filter | ESC: Back";
+                ModernConsole.WriteCentered(23, helpText, ModernConsole.Colors.Text);
                 
-                SVGAFormConsole.Render();
+                ModernConsole.Render();
                 
-                var key = SVGAFormConsole.WaitForKey();
-                switch (key.Key)
+                var key = ModernConsole.WaitForKey();
+                
+                if (searchMode)
                 {
-                    case ConsoleKey.UpArrow:
-                        if (selectedIndex > 0)
+                    // Handle search input
+                    if (key.Key == ConsoleKey.Escape)
+                    {
+                        searchMode = false;
+                        if (string.IsNullOrEmpty(searchFilter))
                         {
-                            selectedIndex--;
-                            if (selectedIndex < scrollOffset)
-                                scrollOffset = selectedIndex;
+                            selectedIndex = 0;
+                            scrollOffset = 0;
                         }
-                        break;
-                    case ConsoleKey.DownArrow:
-                        if (selectedIndex < games.Count - 1)
-                        {
-                            selectedIndex++;
-                            if (selectedIndex >= scrollOffset + visibleRows)
-                                scrollOffset = selectedIndex - visibleRows + 1;
-                        }
-                        break;
-                    case ConsoleKey.Escape:
-                        showingGames = false;
-                        break;
+                    }
+                    else if (key.Key == ConsoleKey.Backspace && searchFilter.Length > 0)
+                    {
+                        searchFilter = searchFilter.Substring(0, searchFilter.Length - 1);
+                        selectedIndex = 0;
+                        scrollOffset = 0;
+                    }
+                    else if (key.Key == ConsoleKey.Enter)
+                    {
+                        searchMode = false;
+                    }
+                    else if (char.IsLetterOrDigit(key.KeyChar) || key.KeyChar == ' ')
+                    {
+                        searchFilter += key.KeyChar;
+                        selectedIndex = 0;
+                        scrollOffset = 0;
+                    }
+                }
+                else
+                {
+                    // Normal navigation
+                    switch (key.Key)
+                    {
+                        case ConsoleKey.UpArrow:
+                            if (selectedIndex > 0)
+                            {
+                                selectedIndex--;
+                                if (selectedIndex < scrollOffset)
+                                    scrollOffset = selectedIndex;
+                            }
+                            break;
+                        case ConsoleKey.DownArrow:
+                            if (selectedIndex < displayGames.Count - 1)
+                            {
+                                selectedIndex++;
+                                if (selectedIndex >= scrollOffset + visibleRows)
+                                    scrollOffset = selectedIndex - visibleRows + 1;
+                            }
+                            break;
+                        case ConsoleKey.Escape:
+                            showingGames = false;
+                            break;
+                        case ConsoleKey.Divide:
+                        case ConsoleKey.Oem2: // Forward slash
+                            searchMode = true;
+                            searchFilter = "";
+                            break;
+                        case ConsoleKey.C:
+                            searchFilter = "";
+                            selectedIndex = 0;
+                            scrollOffset = 0;
+                            break;
+                    }
                 }
             }
         }
@@ -423,25 +547,25 @@ namespace SteamIconFixer.UI
             // Draw popup with library details
             int boxX = 15, boxY = 8, boxWidth = 50, boxHeight = 9;
             
-            SVGAFormConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', SVGAFormConsole.Colors.Black);
-            SVGAFormConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, SVGAFormConsole.Colors.Yellow);
+            ModernConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Background);
+            ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.AccentGold);
             
-            SVGAFormConsole.WriteCentered(boxY + 1, "LIBRARY DETAILS", SVGAFormConsole.Colors.Yellow);
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, SVGAFormConsole.Colors.Yellow);
+            ModernConsole.WriteCentered(boxY + 1, "LIBRARY DETAILS", ModernConsole.Colors.AccentGold);
+            ModernConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, ModernConsole.Colors.AccentGold);
             
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 3, $"Label: {library.Label ?? "N/A"}", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 4, $"Path: {TruncatePath(library.Path, 45)}", SVGAFormConsole.Colors.White);
+            ModernConsole.WriteAt(boxX + 2, boxY + 3, $"Label: {library.Label ?? "N/A"}", ModernConsole.Colors.Text);
+            ModernConsole.WriteAt(boxX + 2, boxY + 4, $"Path: {TruncatePath(library.Path, 45)}", ModernConsole.Colors.Text);
             
             // Check if path exists
             bool exists = Directory.Exists(library.Path);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 5, $"Status: {(exists ? "Available" : "Not Found")}", 
-                exists ? SVGAFormConsole.Colors.LightGreen : SVGAFormConsole.Colors.Red);
+            ModernConsole.WriteAt(boxX + 2, boxY + 5, $"Status: {(exists ? "Available" : "Not Found")}", 
+                exists ? ModernConsole.Colors.Success : ModernConsole.Colors.Error);
             
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 6, boxWidth - 2, SVGAFormConsole.Colors.Yellow);
-            SVGAFormConsole.WriteCentered(boxY + 7, "[ Press any key to close ]", SVGAFormConsole.Colors.White);
+            ModernConsole.DrawHorizontalLine(boxX + 1, boxY + 6, boxWidth - 2, ModernConsole.Colors.AccentGold);
+            ModernConsole.WriteCentered(boxY + 7, "[ Press any key to close ]", ModernConsole.Colors.Text);
             
-            SVGAFormConsole.Render();
-            SVGAFormConsole.WaitForKey();
+            ModernConsole.Render();
+            ModernConsole.WaitForKey();
         }
 
         private string GetSmartPath(string path, int maxLength)

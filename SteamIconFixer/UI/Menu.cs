@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace SteamIconFixer.UI
 {
     /// <summary>
-    /// Retro SVGA-style menu system
+    /// Modern menu system with breadcrumb navigation
     /// </summary>
     public class Menu
     {
@@ -13,6 +13,10 @@ namespace SteamIconFixer.UI
         public List<MenuItem> Items { get; set; }
         public int SelectedIndex { get; set; }
         public bool IsActive { get; set; }
+        public string? ParentMenu { get; set; }
+        public string? Breadcrumb { get; set; }
+
+        private int _lastSelectedIndex = -1;
 
         public Menu(string title)
         {
@@ -34,24 +38,61 @@ namespace SteamIconFixer.UI
 
         public void Draw(int x = 0, int y = 0)
         {
-            // Draw menu title
-            int menuX = (SVGAFormConsole.Width - 45) / 2;
-            int menuY = y == 0 ? 8 : y;
+            _lastSelectedIndex = SelectedIndex;
 
-            SVGAFormConsole.WriteCentered(menuY, Title, SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteCentered(menuY + 1, new string('─', 50), SVGAFormConsole.Colors.Gray70);
+            // Draw menu background
+            int menuWidth = 80;
+            int menuHeight = Items.Count + 8;
+            int menuX = (ModernConsole.Width - menuWidth) / 2;
+            int menuY = y == 0 ? 10 : y;
+            
+            ModernConsole.FillBox(menuX, menuY, menuWidth, menuHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Surface);
+            ModernConsole.DrawBox(menuX, menuY, menuWidth, menuHeight, ModernConsole.Colors.Border);
+
+            // Draw breadcrumb if available
+            if (!string.IsNullOrEmpty(Breadcrumb))
+            {
+                ModernConsole.WriteAt(menuX + 2, menuY + 1, Breadcrumb, ModernConsole.Colors.TextDim);
+                menuY += 1;
+            }
+
+            // Draw menu title
+            ModernConsole.WriteCentered(menuY + 1, Title, ModernConsole.Colors.TextBright);
+            ModernConsole.DrawHorizontalLine(menuX + 2, menuY + 2, menuWidth - 4, ModernConsole.Colors.Border);
 
             // Draw menu items
             for (int i = 0; i < Items.Count; i++)
             {
                 bool isSelected = (i == SelectedIndex);
-                string prefix = isSelected ? "> " : "  ";
-                string number = $"{i + 1}. ";
-                string text = prefix + number + Items[i].Label;
-                string color = isSelected ? SVGAFormConsole.Colors.Magenta : SVGAFormConsole.Colors.Cyan;
-
-                SVGAFormConsole.WriteAt(menuX, menuY + 3 + i, text, color);
+                string prefix = isSelected ? "► " : "  ";
+                string label = Items[i].Label;
+                
+                // Add keyboard hint if available
+                string keyHint = "";
+                if (i < 9)
+                {
+                    keyHint = $"[{i + 1}]";
+                }
+                else if (Items[i].KeyboardShortcut != null)
+                {
+                    keyHint = $"[{Items[i].KeyboardShortcut}]";
+                }
+                
+                // Format the menu item
+                var itemColor = isSelected ? ModernConsole.Colors.Accent : ModernConsole.Colors.Text;
+                var hintColor = isSelected ? ModernConsole.Colors.AccentLight : ModernConsole.Colors.TextDim;
+                
+                // Draw the item
+                ModernConsole.WriteAt(menuX + 3, menuY + 4 + i, prefix, itemColor);
+                ModernConsole.WriteAt(menuX + 5, menuY + 4 + i, keyHint, hintColor);
+                ModernConsole.WriteAt(menuX + 10, menuY + 4 + i, label, itemColor);
+                
             }
+            
+            // Draw help text with keyboard shortcuts
+            int helpY = menuY + menuHeight - 3;
+            ModernConsole.DrawHorizontalLine(menuX + 2, helpY, menuWidth - 4, ModernConsole.Colors.Border);
+            ModernConsole.WriteCentered(helpY + 1, "↑/↓: Navigate | 1-9: Quick Select | ENTER: Select | ESC: Back", ModernConsole.Colors.TextDim);
         }
 
         public async Task<bool> HandleKey(ConsoleKeyInfo key)
@@ -138,5 +179,7 @@ namespace SteamIconFixer.UI
         public string Id { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public Func<Task> Action { get; set; } = () => Task.CompletedTask;
+        public string? KeyboardShortcut { get; set; }
+        public string? HelpText { get; set; }
     }
 }

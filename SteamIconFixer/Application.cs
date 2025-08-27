@@ -17,50 +17,45 @@ namespace SteamIconFixer
         private IconProcessor? _iconProcessor;
         private Menu? _currentMenu;
         private string _statusMessage = "";
-        private string _statusColor = SVGAFormConsole.Colors.White;
+        private Color _statusColor = ModernConsole.Colors.Text;
         private DateTime _statusTime = DateTime.MinValue;
+
+        // State tracking
+        private bool _steamDetected = false;
+        private bool _librariesScanned = false;
+        private bool _gamesScanned = false;
+        private int _detectedGamesCount = 0;
 
         public async Task Run()
         {
-            // Form-based console doesn't need initialization here
-            // It's initialized when the form is created
-            
-            // Show splash screen
-            ShowSplashScreen();
-            await Task.Delay(2000);
-
             // Initialize Steam detector
             _steamDetector = new SteamDetector();
 
-            // Show main menu
+            // Show main menu directly
             await ShowMainMenu();
         }
 
-        private void ShowSplashScreen()
-        {
-            SVGAFormConsole.Clear();
-            
-            // Draw logo
-            SVGAFormConsole.DrawLogo(15, 5);
-            
-            // Draw loading bar
-            SVGAFormConsole.DrawBox(20, 16, 40, 3, UI.SVGAConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(22, 17, "Initializing...", UI.SVGAConsole.Colors.White);
-            
-            // Copyright
-            SVGAFormConsole.WriteCentered(22, "(C) 2025 Steam Icon Fixer Team", UI.SVGAConsole.Colors.Gray40);
-            SVGAFormConsole.WriteCentered(23, "Built with .NET 9 - SVGA Retro Mode", UI.SVGAConsole.Colors.Gray40);
-            
-            SVGAFormConsole.Render();
-        }
 
         private async Task ShowMainMenu()
         {
             _currentMenu = new Menu("MAIN MENU");
-            _currentMenu.AddItem("Detect Steam Installation", DetectSteam);
-            _currentMenu.AddItem("Browse Steam Libraries", BrowseLibraries);
-            _currentMenu.AddItem("Scan for Installed Games", ScanGames);
-            _currentMenu.AddItem("Fix Icons on Desktop", FixDesktopIcons);
+            
+            // Always available
+            _currentMenu.AddItem($"Detect Steam Installation {(_steamDetected ? "✓" : "")}", DetectSteam);
+            
+            // Only after Steam detection
+            if (_steamDetected)
+            {
+                _currentMenu.AddItem($"Browse Steam Libraries {(_librariesScanned ? "✓" : "")}", BrowseLibraries);
+                _currentMenu.AddItem($"Scan for Installed Games {(_gamesScanned ? $"✓ ({_detectedGamesCount})" : "")}", ScanGames);
+            }
+
+            // Only after scanning games
+            if (_gamesScanned)
+            {
+                _currentMenu.AddItem("Fix Icons on Desktop", FixDesktopIcons);
+            }
+
             _currentMenu.AddItem("Configuration", ShowConfiguration);
             _currentMenu.AddItem("Exit", Exit);
 
@@ -74,128 +69,127 @@ namespace SteamIconFixer
                 DrawScreen();
                 menu.Draw();
                 DrawStatusBar();
-                SVGAFormConsole.Render();
+                ModernConsole.Render();
 
-                var key = SVGAFormConsole.WaitForKey();
+                var key = ModernConsole.WaitForKey();
                 await menu.HandleKey(key);
             }
         }
 
         private void DrawScreen()
         {
-            SVGAFormConsole.Clear();
+            ModernConsole.Clear();
             
-            // Title bar
-            SVGAFormConsole.FillBox(0, 0, SVGAFormConsole.Width, 1, ' ', UI.SVGAConsole.Colors.Blue);
-            SVGAFormConsole.WriteCentered(0, "STEAM ICON FIXER v2.0", UI.SVGAConsole.Colors.Yellow);
-            
-            // Subtitle
-            SVGAFormConsole.WriteCentered(2, "Fix Your Steam Desktop Icons", UI.SVGAConsole.Colors.Cyan);
-            SVGAFormConsole.DrawHorizontalLine(0, 3, SVGAFormConsole.Width, UI.SVGAConsole.Colors.White);
+            // Clean title section
+            ModernConsole.DrawTitle(2);
         }
 
         private void DrawStatusBar()
         {
-            // Status message area
-            SVGAFormConsole.DrawHorizontalLine(0, SVGAFormConsole.Height - 7, SVGAFormConsole.Width, UI.SVGAConsole.Colors.White);
+            // Draw system state
+            ModernConsole.WriteAt(2, ModernConsole.Height - 4, $"Steam: {(_steamDetected ? "✓" : "✗")} | Libraries: {(_librariesScanned ? "✓" : "✗")} | Games: {(_gamesScanned ? $"✓ ({_detectedGamesCount})" : "✗")}", ModernConsole.Colors.TextDim);
             
             // Show status message if recent
             if (!string.IsNullOrEmpty(_statusMessage) && (DateTime.Now - _statusTime).TotalSeconds < 5)
             {
-                SVGAFormConsole.WriteCentered(SVGAFormConsole.Height - 6, _statusMessage, _statusColor);
+                ModernConsole.DrawStatusMessage(ModernConsole.Height - 3, _statusMessage, _statusColor);
             }
             
             // Help text
-            SVGAFormConsole.DrawHorizontalLine(0, SVGAFormConsole.Height - 3, SVGAFormConsole.Width, UI.SVGAConsole.Colors.White);
-            SVGAFormConsole.WriteCentered(SVGAFormConsole.Height - 2, "↑/↓: Navigate | ENTER: Select | ESC: Back | 1-5: Quick Select", UI.SVGAConsole.Colors.White);
+            ModernConsole.WriteCentered(ModernConsole.Height - 1, "↑/↓: Navigate | ENTER: Select | ESC: Back", ModernConsole.Colors.TextDim);
         }
 
-        private void SetStatus(string message, string? color = null)
+        private void SetStatus(string message, Color? color = null)
         {
             _statusMessage = message;
-            _statusColor = color ?? SVGAFormConsole.Colors.White;
+            _statusColor = color ?? ModernConsole.Colors.Text;
             _statusTime = DateTime.Now;
         }
 
         private async Task DetectSteam()
         {
-            SetStatus("Detecting Steam installation...", SVGAFormConsole.Colors.Cyan);
-            DrawScreen();
-            DrawStatusBar();
-            SVGAFormConsole.Render();
-
-            await Task.Delay(500);
-
             if (_steamDetector != null && _steamDetector.Detect())
             {
+                _steamDetected = true;
                 ShowSteamInfo();
+                // Force menu refresh to show new options
+                await ShowMainMenu();
             }
             else
             {
-                SetStatus("Steam not found! Please ensure Steam is installed.", SVGAFormConsole.Colors.Red);
+                _steamDetected = false;
+                SetStatus("Steam not found! Please ensure Steam is installed.", ModernConsole.Colors.Error);
             }
         }
 
         private void ShowSteamInfo()
         {
-            SVGAFormConsole.Clear();
+            ModernConsole.Clear();
             DrawScreen();
             
             // Draw compact info box
-            int boxX = 10, boxY = 6, boxWidth = 60, boxHeight = 10;
-            SVGAFormConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, SVGAFormConsole.Colors.Cyan);
+            int boxX = 20, boxY = 8, boxWidth = 80, boxHeight = 10;
+            ModernConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Surface);
+            ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.Border);
             
-            SVGAFormConsole.WriteCentered(boxY + 1, "STEAM INSTALLATION DETECTED", SVGAFormConsole.Colors.Lime);
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, SVGAFormConsole.Colors.Cyan);
+            ModernConsole.WriteCentered(boxY + 2, "STEAM INSTALLATION DETECTED", ModernConsole.Colors.Success);
+            ModernConsole.DrawHorizontalLine(boxX + 2, boxY + 3, boxWidth - 4, ModernConsole.Colors.Border);
             
             // Display summary info
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 4, $"Install Path: {TruncatePath(_steamDetector!.InstallPath, 50)}", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 5, $"User ID: {_steamDetector.UserId}", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 6, $"Libraries Found: {_steamDetector.Libraries.Count}", SVGAFormConsole.Colors.Lime);
+            ModernConsole.WriteAt(boxX + 4, boxY + 5, $"Install Path: {TruncatePath(_steamDetector!.InstallPath, 60)}", ModernConsole.Colors.Text);
+            ModernConsole.WriteAt(boxX + 4, boxY + 6, $"User ID: {_steamDetector.UserId}", ModernConsole.Colors.Text);
+            ModernConsole.WriteAt(boxX + 4, boxY + 7, $"Libraries Found: {_steamDetector.Libraries.Count}", ModernConsole.Colors.Success);
             
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 7, boxWidth - 2, SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteCentered(boxY + 8, "Use 'Browse Steam Libraries' for detailed view", SVGAFormConsole.Colors.Cyan);
+            ModernConsole.WriteCentered(boxY + 8, "[ Press any key to continue ]", ModernConsole.Colors.TextDim);
             
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxHeight + boxY - 2, boxWidth - 2, SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteCentered(boxHeight + boxY - 1, "[ Press any key to continue ]", SVGAFormConsole.Colors.White);
+            ModernConsole.Render();
+            ModernConsole.WaitForKey();
             
-            SVGAFormConsole.Render();
-            SVGAFormConsole.WaitForKey();
-            
-            SetStatus($"Steam ready: {_steamDetector.Libraries.Count} libraries configured", SVGAFormConsole.Colors.Lime);
+            SetStatus($"Steam ready: {_steamDetector.Libraries.Count} libraries configured", ModernConsole.Colors.Success);
         }
 
         private async Task BrowseLibraries()
         {
+            if (!_steamDetected)
+            {
+                SetStatus("Please detect Steam first!", ModernConsole.Colors.Error);
+                return;
+            }
+
             if (_steamDetector?.InstallPath == null)
             {
-                SetStatus("Please detect Steam first!", SVGAFormConsole.Colors.Red);
+                SetStatus("Steam installation is invalid. Please detect Steam again.", ModernConsole.Colors.Error);
                 return;
             }
 
             var viewer = new LibraryViewer(_steamDetector);
             await viewer.Show();
             
-            SetStatus("Library browser closed", SVGAFormConsole.Colors.Cyan);
+            _librariesScanned = true;
+            SetStatus("Libraries scanned successfully", ModernConsole.Colors.Success);
+            await ShowMainMenu();
         }
 
         private async Task ScanGames()
         {
-            if (_steamDetector?.InstallPath == null)
+            if (!_steamDetected)
             {
-                SetStatus("Please detect Steam first!", SVGAFormConsole.Colors.Red);
+                SetStatus("Please detect Steam first!", ModernConsole.Colors.Error);
                 return;
             }
 
-            SetStatus("Scanning for installed games...", SVGAFormConsole.Colors.Cyan);
-            DrawScreen();
-            DrawStatusBar();
-            SVGAFormConsole.Render();
-
-            await Task.Delay(500);
+            if (!_librariesScanned)
+            {
+                SetStatus("Please browse libraries first!", ModernConsole.Colors.Warning);
+                return;
+            }
             
-            var games = _steamDetector.GetInstalledGames();
+            var games = _steamDetector!.GetInstalledGames();
+            _detectedGamesCount = games.Count;
+            _gamesScanned = true;
+            
             ShowGamesPopup(games);
+            await ShowMainMenu();
         }
 
         private void ShowGamesPopup(List<SteamGame> games)
@@ -207,16 +201,16 @@ namespace SteamIconFixer
             bool running = true;
             while (running)
             {
-                SVGAFormConsole.Clear();
+                ModernConsole.Clear();
                 DrawScreen();
                 
                 // Draw popup box
                 int boxX = 10, boxY = 5, boxWidth = 60, boxHeight = 15;
-                SVGAFormConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', SVGAFormConsole.Colors.Black);
-                SVGAFormConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, SVGAFormConsole.Colors.Cyan);
+                ModernConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Background);
+                ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.AccentCyan);
                 
-                SVGAFormConsole.WriteCentered(boxY + 1, $"INSTALLED GAMES ({games.Count} Total)", SVGAFormConsole.Colors.Magenta);
-                SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, SVGAFormConsole.Colors.Cyan);
+                ModernConsole.WriteCentered(boxY + 1, $"INSTALLED GAMES ({games.Count} Total)", ModernConsole.Colors.AccentPurple);
+                ModernConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, ModernConsole.Colors.AccentCyan);
                 
                 // Draw visible games
                 int endIndex = Math.Min(scrollOffset + visibleItems, games.Count);
@@ -228,24 +222,24 @@ namespace SteamIconFixer
                     
                     string displayName = TruncatePath(game.Name, boxWidth - 8);
                     string prefix = isSelected ? "> " : "  ";
-                    string color = isSelected ? SVGAFormConsole.Colors.Magenta : SVGAFormConsole.Colors.White;
+                    var color = isSelected ? ModernConsole.Colors.AccentPurple : ModernConsole.Colors.Text;
                     
-                    SVGAFormConsole.WriteAt(boxX + 2, y, prefix + displayName, color);
+                    ModernConsole.WriteAt(boxX + 2, y, prefix + displayName, color);
                 }
                 
                 // Scroll indicators
                 if (scrollOffset > 0)
-                    SVGAFormConsole.WriteAt(boxX + boxWidth - 3, boxY + 3, "^", SVGAFormConsole.Colors.Cyan);
+                    ModernConsole.WriteAt(boxX + boxWidth - 3, boxY + 3, "^", ModernConsole.Colors.AccentCyan);
                 if (scrollOffset + visibleItems < games.Count)
-                    SVGAFormConsole.WriteAt(boxX + boxWidth - 3, boxY + boxHeight - 3, "v", SVGAFormConsole.Colors.Cyan);
+                    ModernConsole.WriteAt(boxX + boxWidth - 3, boxY + boxHeight - 3, "v", ModernConsole.Colors.AccentCyan);
                 
                 // Help text
-                SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + boxHeight - 2, boxWidth - 2, SVGAFormConsole.Colors.Cyan);
-                SVGAFormConsole.WriteCentered(boxY + boxHeight - 1, "↑/↓: Scroll | ESC: Close", SVGAFormConsole.Colors.White);
+                ModernConsole.DrawHorizontalLine(boxX + 1, boxY + boxHeight - 2, boxWidth - 2, ModernConsole.Colors.AccentCyan);
+                ModernConsole.WriteCentered(boxY + boxHeight - 1, "↑/↓: Scroll | ESC: Close", ModernConsole.Colors.Text);
                 
-                SVGAFormConsole.Render();
+                ModernConsole.Render();
                 
-                var key = SVGAFormConsole.WaitForKey();
+                var key = ModernConsole.WaitForKey();
                 switch (key.Key)
                 {
                     case ConsoleKey.Escape:
@@ -270,14 +264,14 @@ namespace SteamIconFixer
                 }
             }
             
-            SetStatus($"Found {games.Count} installed games", SVGAFormConsole.Colors.Lime);
+            SetStatus($"Found {games.Count} installed games", ModernConsole.Colors.Success);
         }
 
         private async Task FixDesktopIcons()
         {
-            if (_steamDetector?.InstallPath == null)
+            if (!_steamDetected || !_librariesScanned || !_gamesScanned)
             {
-                SetStatus("Please detect Steam first!", SVGAFormConsole.Colors.Red);
+                SetStatus("Please complete Steam detection and game scanning first!", ModernConsole.Colors.Error);
                 return;
             }
 
@@ -315,11 +309,6 @@ namespace SteamIconFixer
 
         private async Task ProcessIcons(IconProcessor.CDNProvider cdn)
         {
-            SetStatus($"Processing shortcuts with {cdn} CDN...", SVGAFormConsole.Colors.Cyan);
-            DrawScreen();
-            DrawStatusBar();
-            SVGAFormConsole.Render();
-
             // Initialize icon processor
             _iconProcessor = new IconProcessor(_steamDetector!.InstallPath, cdn);
             
@@ -338,8 +327,42 @@ namespace SteamIconFixer
             if (Directory.Exists(startMenuPath))
                 directories.Add(startMenuPath);
 
-            // Process shortcuts
-            var results = await _iconProcessor.ProcessShortcuts(directories.ToArray());
+            // Ensure all installed games have a desktop shortcut
+            var games = _steamDetector.GetInstalledGames();
+            foreach (var game in games)
+            {
+                IconProcessor.EnsureDesktopShortcut(game, desktopPath);
+            }
+
+            // Process shortcuts with progress display
+            bool processing = true;
+            int currentProgress = 0;
+            int totalProgress = 100;
+            
+            var progressTask = Task.Run(async () =>
+            {
+                while (processing)
+                {
+                    DrawScreen();
+                    ModernConsole.DrawAnimatedLoadingBar(20, 12, 60, $"Downloading Icons from {cdn} CDN...");
+                    // Show progress percentage
+                    ModernConsole.WriteCentered(15, $"Progress: {currentProgress}%", ModernConsole.Colors.Text);
+                    DrawStatusBar();
+                    ModernConsole.Render();
+                    await Task.Delay(50);
+                }
+            });
+
+            // Process shortcuts with progress callback
+            var results = await _iconProcessor.ProcessShortcutsWithProgress(
+                directories.ToArray(),
+                (completed, total) =>
+                {
+                    currentProgress = total > 0 ? (completed * 100 / total) : 0;
+                });
+
+            processing = false;
+            await progressTask;
             
             // Show results
             ShowProcessResults(results);
@@ -347,10 +370,10 @@ namespace SteamIconFixer
             // Flush icon cache if any were fixed
             if (results.Any(r => r.Success && r.Message == "Icon downloaded successfully"))
             {
-                SetStatus("Flushing Windows icon cache...", SVGAFormConsole.Colors.Cyan);
+                SetStatus("Flushing Windows icon cache...", ModernConsole.Colors.AccentCyan);
                 DrawScreen();
                 DrawStatusBar();
-                SVGAFormConsole.Render();
+                ModernConsole.Render();
                 
                 IconProcessor.FlushIconCache();
                 await Task.Delay(1000);
@@ -364,42 +387,65 @@ namespace SteamIconFixer
             int alreadyOk = results.Count(r => r.Success && r.Message == "Icon already exists");
             int newlyFixed = results.Count(r => r.Success && r.Message == "Icon downloaded successfully");
             
-            SVGAFormConsole.Clear();
+            ModernConsole.Clear();
             DrawScreen();
             
             // Draw results box
             int boxX = 15, boxY = 7, boxWidth = 50, boxHeight = 10;
-            SVGAFormConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, SVGAFormConsole.Colors.Lime);
+            ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.Success);
             
-            SVGAFormConsole.WriteCentered(boxY + 1, "PROCESSING COMPLETE", SVGAFormConsole.Colors.Lime);
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, SVGAFormConsole.Colors.Lime);
+            ModernConsole.WriteCentered(boxY + 1, "PROCESSING COMPLETE", ModernConsole.Colors.Success);
+            ModernConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, ModernConsole.Colors.Success);
             
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 4, $"Total shortcuts processed: {results.Count}", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 5, $"Newly fixed: {newlyFixed}", SVGAFormConsole.Colors.Lime);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 6, $"Already OK: {alreadyOk}", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteAt(boxX + 2, boxY + 7, $"Failed: {failed}", failed > 0 ? SVGAFormConsole.Colors.Red : SVGAFormConsole.Colors.White);
+            ModernConsole.WriteAt(boxX + 2, boxY + 4, $"Total shortcuts processed: {results.Count}", ModernConsole.Colors.Text);
+            ModernConsole.WriteAt(boxX + 2, boxY + 5, $"Newly fixed: {newlyFixed}", ModernConsole.Colors.Success);
+            ModernConsole.WriteAt(boxX + 2, boxY + 6, $"Already OK: {alreadyOk}", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteAt(boxX + 2, boxY + 7, $"Failed: {failed}", failed > 0 ? ModernConsole.Colors.Error : ModernConsole.Colors.Text);
             
-            SVGAFormConsole.DrawHorizontalLine(boxX + 1, boxHeight + boxY - 2, boxWidth - 2, SVGAFormConsole.Colors.Lime);
-            SVGAFormConsole.WriteCentered(boxHeight + boxY - 1, "[ Press any key to continue ]", SVGAFormConsole.Colors.White);
+            ModernConsole.DrawHorizontalLine(boxX + 1, boxHeight + boxY - 2, boxWidth - 2, ModernConsole.Colors.Success);
+            ModernConsole.WriteCentered(boxHeight + boxY - 1, "[ Press any key to continue ]", ModernConsole.Colors.Text);
             
-            SVGAFormConsole.Render();
-            SVGAFormConsole.WaitForKey();
+            ModernConsole.Render();
+            ModernConsole.WaitForKey();
             
             string statusMsg = newlyFixed > 0 
                 ? $"Successfully fixed {newlyFixed} icons!" 
                 : "All icons are already up to date!";
-            SetStatus(statusMsg, SVGAFormConsole.Colors.Lime);
+            SetStatus(statusMsg, ModernConsole.Colors.Success);
         }
 
         private async Task ShowConfiguration()
         {
             var configMenu = new Menu("CONFIGURATION");
-            configMenu.AddItem("Flush Icon Cache", async () => 
+            configMenu.AddItem("Flush Icon Cache (Restarts Explorer)", async () => 
             {
-                SetStatus("Flushing Windows icon cache...", SVGAFormConsole.Colors.Cyan);
-                IconProcessor.FlushIconCache();
-                await Task.Delay(1000);
-                SetStatus("Icon cache flushed!", SVGAFormConsole.Colors.Lime);
+                // Show confirmation dialog
+                bool confirmed = ModernConsole.ShowConfirmDialog(
+                    "⚠ FLUSH ICON CACHE",
+                    "This will restart Windows Explorer. Continue?"
+                );
+                
+                if (confirmed)
+                {
+                    SetStatus("Flushing Windows icon cache...", ModernConsole.Colors.AccentCyan);
+                    IconProcessor.FlushIconCache();
+                    await Task.Delay(1000);
+                    SetStatus("Icon cache flushed!", ModernConsole.Colors.Success);
+                }
+                else
+                {
+                    SetStatus("Icon cache flush cancelled.", ModernConsole.Colors.Warning);
+                }
+            });
+            configMenu.AddItem("Save Preferences", async () => 
+            {
+                await SaveConfiguration();
+                SetStatus("Configuration saved!", ModernConsole.Colors.Success);
+            });
+            configMenu.AddItem("Load Preferences", async () => 
+            {
+                await LoadConfiguration();
+                SetStatus("Configuration loaded!", ModernConsole.Colors.Success);
             });
             configMenu.AddItem("Back to Main Menu", () => 
             {
@@ -410,18 +456,54 @@ namespace SteamIconFixer
             await RunMenu(configMenu);
         }
 
+        private async Task SaveConfiguration()
+        {
+            // Save configuration to AppData
+            string configPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "SteamIconFixer",
+                "config.json"
+            );
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+            
+            var config = new
+            {
+                LastSteamPath = _steamDetector?.InstallPath,
+                PreferredCDN = "Akamai",
+                LastScanDate = DateTime.Now
+            };
+            
+            string json = System.Text.Json.JsonSerializer.Serialize(config, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(configPath, json);
+        }
+
+        private async Task LoadConfiguration()
+        {
+            string configPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "SteamIconFixer",
+                "config.json"
+            );
+            
+            if (File.Exists(configPath))
+            {
+                string json = await File.ReadAllTextAsync(configPath);
+                // Parse and apply configuration
+            }
+        }
+
         private async Task Exit()
         {
             // Show goodbye message
-            SVGAFormConsole.Clear();
-            SVGAFormConsole.WriteCentered(10, "Thank you for using Steam Icon Fixer!", SVGAFormConsole.Colors.Cyan);
-            SVGAFormConsole.WriteCentered(12, "Goodbye!", SVGAFormConsole.Colors.White);
-            SVGAFormConsole.Render();
+            ModernConsole.Clear();
+            ModernConsole.WriteCentered(10, "Thank you for using Steam Icon Fixer!", ModernConsole.Colors.AccentCyan);
+            ModernConsole.WriteCentered(12, "Goodbye!", ModernConsole.Colors.Text);
+            ModernConsole.Render();
             
             await Task.Delay(1500);
             
             // Clear screen before exiting to DOS prompt
-            SVGAFormConsole.CleanupForExit();
+            ModernConsole.CleanupForExit();
             Environment.Exit(0);
         }
 

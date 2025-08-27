@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build)"
+      "Bash(dotnet build)",
+      "Bash(git push:*)",
+      "Bash(powershell:*)",
+      "Bash(start SteamIconFixer-v2.0.0.0.exe)",
+      "Bash(Copy-Item \"C:\\Users\\simon\\OneDrive\\Simon_Files\\Projects\\game-icon-fix\\assets\\Perfect-DOS-VGA-437\\Perfect DOS VGA 437 Win.ttf\" -Destination \"C:\\Users\\simon\\OneDrive\\Simon_Files\\Projects\\game-icon-fix\\SteamIconFixer\\Resources\"\" -Force)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet run:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
