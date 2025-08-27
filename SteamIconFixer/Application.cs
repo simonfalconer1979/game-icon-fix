@@ -437,16 +437,6 @@ namespace SteamIconFixer
                     SetStatus("Icon cache flush cancelled.", ModernConsole.Colors.Warning);
                 }
             });
-            configMenu.AddItem("Save Preferences", async () => 
-            {
-                await SaveConfiguration();
-                SetStatus("Configuration saved!", ModernConsole.Colors.Success);
-            });
-            configMenu.AddItem("Load Preferences", async () => 
-            {
-                await LoadConfiguration();
-                SetStatus("Configuration loaded!", ModernConsole.Colors.Success);
-            });
             configMenu.AddItem("Back to Main Menu", () => 
             {
                 configMenu.IsActive = false;
@@ -456,41 +446,6 @@ namespace SteamIconFixer
             await RunMenu(configMenu);
         }
 
-        private async Task SaveConfiguration()
-        {
-            // Save configuration to AppData
-            string configPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "SteamIconFixer",
-                "config.json"
-            );
-            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-            
-            var config = new
-            {
-                LastSteamPath = _steamDetector?.InstallPath,
-                PreferredCDN = "Akamai",
-                LastScanDate = DateTime.Now
-            };
-            
-            string json = System.Text.Json.JsonSerializer.Serialize(config, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(configPath, json);
-        }
-
-        private async Task LoadConfiguration()
-        {
-            string configPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "SteamIconFixer",
-                "config.json"
-            );
-            
-            if (File.Exists(configPath))
-            {
-                string json = await File.ReadAllTextAsync(configPath);
-                // Parse and apply configuration
-            }
-        }
 
         private async Task Exit()
         {
