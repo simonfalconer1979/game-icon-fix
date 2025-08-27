@@ -56,7 +56,7 @@ namespace SteamIconFixer
                 _currentMenu.AddItem("Fix Icons on Desktop", FixDesktopIcons);
             }
 
-            _currentMenu.AddItem("Configuration", ShowConfiguration);
+            _currentMenu.AddItem("Utilities", ShowUtilities);
             _currentMenu.AddItem("Exit", Exit);
 
             await RunMenu(_currentMenu);
@@ -414,10 +414,10 @@ namespace SteamIconFixer
             SetStatus(statusMsg, ModernConsole.Colors.Success);
         }
 
-        private async Task ShowConfiguration()
+        private async Task ShowUtilities()
         {
-            var configMenu = new Menu("CONFIGURATION");
-            configMenu.AddItem("Flush Icon Cache (Restarts Explorer)", async () => 
+            var utilMenu = new Menu("UTILITIES");
+            utilMenu.AddItem("Flush Icon Cache (Restarts Explorer)", async () => 
             {
                 // Show confirmation dialog
                 bool confirmed = ModernConsole.ShowConfirmDialog(
@@ -437,13 +437,13 @@ namespace SteamIconFixer
                     SetStatus("Icon cache flush cancelled.", ModernConsole.Colors.Warning);
                 }
             });
-            configMenu.AddItem("Back to Main Menu", () => 
+            utilMenu.AddItem("Back to Main Menu", () => 
             {
-                configMenu.IsActive = false;
+                utilMenu.IsActive = false;
                 return Task.CompletedTask;
             });
             
-            await RunMenu(configMenu);
+            await RunMenu(utilMenu);
         }
 
 
