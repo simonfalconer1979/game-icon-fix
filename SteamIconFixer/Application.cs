@@ -30,8 +30,38 @@ namespace SteamIconFixer
         {
             // Initialize Steam detector
             _steamDetector = new SteamDetector();
+            
+            // Automatically detect Steam on startup
+            ModernConsole.Clear();
+            ModernConsole.DrawTitle(2);
+            ModernConsole.WriteCentered(10, "Detecting Steam installation...", ModernConsole.Colors.Info);
+            ModernConsole.Render();
+            
+            if (_steamDetector.Detect())
+            {
+                _steamDetected = true;
+                _librariesScanned = true; // Libraries are scanned during detection
+                
+                // Automatically scan for games
+                ModernConsole.WriteCentered(12, "Scanning for installed games...", ModernConsole.Colors.Info);
+                ModernConsole.Render();
+                
+                var games = _steamDetector.GetInstalledGames();
+                _detectedGamesCount = games.Count;
+                _gamesScanned = true;
+                
+                ModernConsole.WriteCentered(14, $"Found {_detectedGamesCount} installed games!", ModernConsole.Colors.Success);
+                ModernConsole.Render();
+                await Task.Delay(1000);
+            }
+            else
+            {
+                ModernConsole.WriteCentered(12, "Steam not detected. Please ensure Steam is installed.", ModernConsole.Colors.Warning);
+                ModernConsole.Render();
+                await Task.Delay(2000);
+            }
 
-            // Show main menu directly
+            // Show main menu
             await ShowMainMenu();
         }
 
@@ -40,22 +70,12 @@ namespace SteamIconFixer
         {
             _currentMenu = new Menu("MAIN MENU");
             
-            // Always available
-            _currentMenu.AddItem($"Detect Steam Installation {(_steamDetected ? "✓" : "")}", DetectSteam);
+            // Main actions - always visible
+            _currentMenu.AddItem("Fix Desktop Icons", FixDesktopIcons);
+            _currentMenu.AddItem("Browse Steam Libraries", BrowseLibraries);
             
-            // Only after Steam detection
-            if (_steamDetected)
-            {
-                _currentMenu.AddItem($"Browse Steam Libraries {(_librariesScanned ? "✓" : "")}", BrowseLibraries);
-                _currentMenu.AddItem($"Scan for Installed Games {(_gamesScanned ? $"✓ ({_detectedGamesCount})" : "")}", ScanGames);
-            }
-
-            // Only after scanning games
-            if (_gamesScanned)
-            {
-                _currentMenu.AddItem("Fix Icons on Desktop", FixDesktopIcons);
-            }
-
+            // Utilities and exit
+            _currentMenu.AddItem("Rescan Steam", RescanSteam);
             _currentMenu.AddItem("Utilities", ShowUtilities);
             _currentMenu.AddItem("Exit", Exit);
 
@@ -87,7 +107,14 @@ namespace SteamIconFixer
         private void DrawStatusBar()
         {
             // Draw system state
-            ModernConsole.WriteAt(2, ModernConsole.Height - 4, $"Steam: {(_steamDetected ? "✓" : "✗")} | Libraries: {(_librariesScanned ? "✓" : "✗")} | Games: {(_gamesScanned ? $"✓ ({_detectedGamesCount})" : "✗")}", ModernConsole.Colors.TextDim);
+            if (_steamDetected)
+            {
+                ModernConsole.WriteAt(2, ModernConsole.Height - 4, $"Steam: ✓ | Games: {_detectedGamesCount} installed", ModernConsole.Colors.TextDim);
+            }
+            else
+            {
+                ModernConsole.WriteAt(2, ModernConsole.Height - 4, "Steam: Not detected", ModernConsole.Colors.Warning);
+            }
             
             // Show status message if recent
             if (!string.IsNullOrEmpty(_statusMessage) && (DateTime.Now - _statusTime).TotalSeconds < 5)
@@ -106,166 +133,59 @@ namespace SteamIconFixer
             _statusTime = DateTime.Now;
         }
 
-        private async Task DetectSteam()
+        private async Task RescanSteam()
         {
+            ModernConsole.Clear();
+            ModernConsole.DrawTitle(2);
+            ModernConsole.WriteCentered(10, "Rescanning Steam installation...", ModernConsole.Colors.Info);
+            ModernConsole.Render();
+            
             if (_steamDetector != null && _steamDetector.Detect())
             {
                 _steamDetected = true;
-                ShowSteamInfo();
-                // Force menu refresh to show new options
-                await ShowMainMenu();
+                _librariesScanned = true;
+                
+                ModernConsole.WriteCentered(12, "Scanning for installed games...", ModernConsole.Colors.Info);
+                ModernConsole.Render();
+                
+                var games = _steamDetector.GetInstalledGames();
+                _detectedGamesCount = games.Count;
+                _gamesScanned = true;
+                
+                ModernConsole.WriteCentered(14, $"Found {_detectedGamesCount} installed games!", ModernConsole.Colors.Success);
+                ModernConsole.Render();
+                await Task.Delay(1500);
+                
+                SetStatus($"Rescan complete: {_detectedGamesCount} games found", ModernConsole.Colors.Success);
             }
             else
             {
                 _steamDetected = false;
-                SetStatus("Steam not found! Please ensure Steam is installed.", ModernConsole.Colors.Error);
+                ModernConsole.WriteCentered(12, "Steam not detected. Please ensure Steam is installed.", ModernConsole.Colors.Warning);
+                ModernConsole.Render();
+                await Task.Delay(2000);
+                SetStatus("Steam not found!", ModernConsole.Colors.Error);
             }
-        }
-
-        private void ShowSteamInfo()
-        {
-            ModernConsole.Clear();
-            DrawScreen();
-            
-            // Draw compact info box
-            int boxX = 20, boxY = 8, boxWidth = 80, boxHeight = 10;
-            ModernConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Surface);
-            ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.Border);
-            
-            ModernConsole.WriteCentered(boxY + 2, "STEAM INSTALLATION DETECTED", ModernConsole.Colors.Success);
-            ModernConsole.DrawHorizontalLine(boxX + 2, boxY + 3, boxWidth - 4, ModernConsole.Colors.Border);
-            
-            // Display summary info
-            ModernConsole.WriteAt(boxX + 4, boxY + 5, $"Install Path: {TruncatePath(_steamDetector!.InstallPath, 60)}", ModernConsole.Colors.Text);
-            ModernConsole.WriteAt(boxX + 4, boxY + 6, $"User ID: {_steamDetector.UserId}", ModernConsole.Colors.Text);
-            ModernConsole.WriteAt(boxX + 4, boxY + 7, $"Libraries Found: {_steamDetector.Libraries.Count}", ModernConsole.Colors.Success);
-            
-            ModernConsole.WriteCentered(boxY + 8, "[ Press any key to continue ]", ModernConsole.Colors.TextDim);
-            
-            ModernConsole.Render();
-            ModernConsole.WaitForKey();
-            
-            SetStatus($"Steam ready: {_steamDetector.Libraries.Count} libraries configured", ModernConsole.Colors.Success);
         }
 
         private async Task BrowseLibraries()
         {
-            if (!_steamDetected)
+            if (!_steamDetected || _steamDetector?.InstallPath == null)
             {
-                SetStatus("Please detect Steam first!", ModernConsole.Colors.Error);
-                return;
+                SetStatus("Steam not detected. Scanning now...", ModernConsole.Colors.Warning);
+                await RescanSteam();
+                
+                if (!_steamDetected)
+                {
+                    return;
+                }
             }
 
-            if (_steamDetector?.InstallPath == null)
-            {
-                SetStatus("Steam installation is invalid. Please detect Steam again.", ModernConsole.Colors.Error);
-                return;
-            }
-
-            var viewer = new LibraryViewer(_steamDetector);
+            var viewer = new LibraryViewer(_steamDetector!);
             await viewer.Show();
-            
-            _librariesScanned = true;
-            SetStatus("Libraries scanned successfully", ModernConsole.Colors.Success);
             await ShowMainMenu();
         }
 
-        private async Task ScanGames()
-        {
-            if (!_steamDetected)
-            {
-                SetStatus("Please detect Steam first!", ModernConsole.Colors.Error);
-                return;
-            }
-
-            if (!_librariesScanned)
-            {
-                SetStatus("Please browse libraries first!", ModernConsole.Colors.Warning);
-                return;
-            }
-            
-            var games = _steamDetector!.GetInstalledGames();
-            _detectedGamesCount = games.Count;
-            _gamesScanned = true;
-            
-            ShowGamesPopup(games);
-            await ShowMainMenu();
-        }
-
-        private void ShowGamesPopup(List<SteamGame> games)
-        {
-            int scrollOffset = 0;
-            int selectedIndex = 0;
-            int visibleItems = 10;
-            
-            bool running = true;
-            while (running)
-            {
-                ModernConsole.Clear();
-                DrawScreen();
-                
-                // Draw popup box
-                int boxX = 10, boxY = 5, boxWidth = 60, boxHeight = 15;
-                ModernConsole.FillBox(boxX, boxY, boxWidth, boxHeight, ' ', ModernConsole.Colors.Text, ModernConsole.Colors.Background);
-                ModernConsole.DrawBox(boxX, boxY, boxWidth, boxHeight, ModernConsole.Colors.AccentCyan);
-                
-                ModernConsole.WriteCentered(boxY + 1, $"INSTALLED GAMES ({games.Count} Total)", ModernConsole.Colors.AccentPurple);
-                ModernConsole.DrawHorizontalLine(boxX + 1, boxY + 2, boxWidth - 2, ModernConsole.Colors.AccentCyan);
-                
-                // Draw visible games
-                int endIndex = Math.Min(scrollOffset + visibleItems, games.Count);
-                for (int i = scrollOffset; i < endIndex; i++)
-                {
-                    int y = boxY + 3 + (i - scrollOffset);
-                    var game = games[i];
-                    bool isSelected = i == selectedIndex;
-                    
-                    string displayName = TruncatePath(game.Name, boxWidth - 8);
-                    string prefix = isSelected ? "> " : "  ";
-                    var color = isSelected ? ModernConsole.Colors.AccentPurple : ModernConsole.Colors.Text;
-                    
-                    ModernConsole.WriteAt(boxX + 2, y, prefix + displayName, color);
-                }
-                
-                // Scroll indicators
-                if (scrollOffset > 0)
-                    ModernConsole.WriteAt(boxX + boxWidth - 3, boxY + 3, "^", ModernConsole.Colors.AccentCyan);
-                if (scrollOffset + visibleItems < games.Count)
-                    ModernConsole.WriteAt(boxX + boxWidth - 3, boxY + boxHeight - 3, "v", ModernConsole.Colors.AccentCyan);
-                
-                // Help text
-                ModernConsole.DrawHorizontalLine(boxX + 1, boxY + boxHeight - 2, boxWidth - 2, ModernConsole.Colors.AccentCyan);
-                ModernConsole.WriteCentered(boxY + boxHeight - 1, "↑/↓: Scroll | ESC: Close", ModernConsole.Colors.Text);
-                
-                ModernConsole.Render();
-                
-                var key = ModernConsole.WaitForKey();
-                switch (key.Key)
-                {
-                    case ConsoleKey.Escape:
-                        running = false;
-                        break;
-                    case ConsoleKey.UpArrow:
-                        if (selectedIndex > 0)
-                        {
-                            selectedIndex--;
-                            if (selectedIndex < scrollOffset)
-                                scrollOffset = selectedIndex;
-                        }
-                        break;
-                    case ConsoleKey.DownArrow:
-                        if (selectedIndex < games.Count - 1)
-                        {
-                            selectedIndex++;
-                            if (selectedIndex >= scrollOffset + visibleItems)
-                                scrollOffset = selectedIndex - visibleItems + 1;
-                        }
-                        break;
-                }
-            }
-            
-            SetStatus($"Found {games.Count} installed games", ModernConsole.Colors.Success);
-        }
 
         private async Task FixDesktopIcons()
         {
@@ -312,40 +232,36 @@ namespace SteamIconFixer
             // Initialize icon processor
             _iconProcessor = new IconProcessor(_steamDetector!.InstallPath, cdn);
             
-            // Get directories to scan
-            var directories = new List<string>();
-            
-            // Desktop
+            // Get desktop path and Steam games directory
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            directories.Add(desktopPath);
+            string steamGamesDir = Path.Combine(_steamDetector.InstallPath, "steam", "games");
             
-            // Start Menu Steam folder
-            string startMenuPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                @"Microsoft\Windows\Start Menu\Programs\Steam"
-            );
-            if (Directory.Exists(startMenuPath))
-                directories.Add(startMenuPath);
-
-            // Ensure all installed games have a desktop shortcut
+            // Get all installed games
             var games = _steamDetector.GetInstalledGames();
-            foreach (var game in games)
-            {
-                IconProcessor.EnsureDesktopShortcut(game, desktopPath);
-            }
-
-            // Process shortcuts with progress display
+            
+            // Step 1: Delete all existing Steam shortcuts from desktop
+            DrawScreen();
+            ModernConsole.WriteCentered(10, "Step 1: Removing old Steam shortcuts...", ModernConsole.Colors.Info);
+            ModernConsole.Render();
+            
+            var deletedShortcuts = IconProcessor.DeleteSteamShortcuts(desktopPath);
+            await Task.Delay(500);
+            
+            ModernConsole.WriteCentered(11, $"Removed {deletedShortcuts.Count} old shortcuts", ModernConsole.Colors.Success);
+            ModernConsole.Render();
+            await Task.Delay(1000);
+            
+            // Step 2: Download fresh icons for all games
             bool processing = true;
             int currentProgress = 0;
-            int totalProgress = 100;
             
             var progressTask = Task.Run(async () =>
             {
                 while (processing)
                 {
                     DrawScreen();
-                    ModernConsole.DrawAnimatedLoadingBar(20, 12, 60, $"Downloading Icons from {cdn} CDN...");
-                    // Show progress percentage
+                    ModernConsole.WriteCentered(10, "Step 2: Downloading fresh icons from Steam CDN...", ModernConsole.Colors.Info);
+                    ModernConsole.DrawAnimatedLoadingBar(20, 12, 60, $"Downloading from {cdn} CDN...");
                     ModernConsole.WriteCentered(15, $"Progress: {currentProgress}%", ModernConsole.Colors.Text);
                     DrawStatusBar();
                     ModernConsole.Render();
@@ -353,9 +269,9 @@ namespace SteamIconFixer
                 }
             });
 
-            // Process shortcuts with progress callback
-            var results = await _iconProcessor.ProcessShortcutsWithProgress(
-                directories.ToArray(),
+            // Download icons with progress callback
+            var results = await _iconProcessor.DownloadIconsForGames(
+                games,
                 (completed, total) =>
                 {
                     currentProgress = total > 0 ? (completed * 100 / total) : 0;
@@ -364,19 +280,42 @@ namespace SteamIconFixer
             processing = false;
             await progressTask;
             
+            // Step 3: Create new shortcuts with downloaded icons
+            DrawScreen();
+            ModernConsole.WriteCentered(10, "Step 3: Creating new shortcuts with fresh icons...", ModernConsole.Colors.Info);
+            ModernConsole.Render();
+            
+            int shortcutsCreated = 0;
+            foreach (var game in games)
+            {
+                try
+                {
+                    IconProcessor.CreateDesktopShortcut(game, desktopPath, steamGamesDir);
+                    shortcutsCreated++;
+                }
+                catch { }
+            }
+            
+            await Task.Delay(500);
+            ModernConsole.WriteCentered(11, $"Created {shortcutsCreated} new shortcuts", ModernConsole.Colors.Success);
+            ModernConsole.Render();
+            await Task.Delay(1000);
+            
             // Show results
             ShowProcessResults(results);
             
-            // Flush icon cache if any were fixed
-            if (results.Any(r => r.Success && r.Message == "Icon downloaded successfully"))
+            // Step 4: Flush icon cache to ensure Windows uses new icons
+            if (results.Any(r => r.Success))
             {
-                SetStatus("Flushing Windows icon cache...", ModernConsole.Colors.AccentCyan);
+                SetStatus("Step 4: Refreshing Windows icon cache...", ModernConsole.Colors.AccentCyan);
                 DrawScreen();
                 DrawStatusBar();
                 ModernConsole.Render();
                 
                 IconProcessor.FlushIconCache();
-                await Task.Delay(1000);
+                await Task.Delay(2000);
+                
+                SetStatus("All shortcuts recreated with fresh icons!", ModernConsole.Colors.Success);
             }
         }
 
